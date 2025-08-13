@@ -17,24 +17,24 @@ def call(Map config) {
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
         }
 
-        stages {
-           
+        stage('Load API Config') {
+            steps {
+                script {
+                    // Cargar como texto
+                    def contenido = libraryResource "HIS/${config.API_NAME}.groovy"
 
-            stage('Load API Config') {
-                steps {
-                    script {
-                        // Cargar el diccionario correspondiente desde resources
-                        def configCompleto = libraryResource  "HIS/${config.API_NAME}.groovy"
-                        // Seleccionar el ambiente: demo o test
-                        env.API_CONFIG = configCompleto[config.AMBIENTE]
+                    // Interpretar el contenido como código Groovy (esto devuelve un Map)
+                    def configCompleto = evaluate(contenido)
 
-                        echo "Configuración cargada para API ${config.API_NAME} en ambiente ${config.AMBIENTE}:"
-                        echo "Ruta csproj: ${env.API_CONFIG.rutaCsproj}"
-                        echo "Credenciales: ${env.API_CONFIG.nombreCredenciales}"
-                    }
+                    // Seleccionar el ambiente: demo o test
+                    def apiConfig = configCompleto[config.AMBIENTE]
+
+                    echo "Configuración cargada para API ${config.API_NAME} en ambiente ${config.AMBIENTE}:"
+                    echo "Ruta csproj: ${apiConfig.CS_PROJ_PATH}"
+                    echo "Credenciales: ${apiConfig.CREDENTIALS_ID}"
                 }
-            }
-
+            }   
         }
+
     }
 }
