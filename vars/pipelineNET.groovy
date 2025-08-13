@@ -18,17 +18,7 @@ def call(Map config) {
         }
 
         stages {
-            stage('Clone Repository') {
-                steps {
-                    script {
-                        cloneRepo(
-                            branch: config.AMBIENTE,
-                            repoPath: env.REPO_PATH,
-                            repoUrl: env.REPO_URL
-                        )
-                    }
-                }
-            }
+           
 
             stage('Load API Config') {
                 steps {
