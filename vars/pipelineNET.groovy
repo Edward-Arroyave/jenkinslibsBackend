@@ -16,25 +16,25 @@ def call(Map config) {
             CONFIGURATION = 'Release'
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
         }
+            stages{
+                    stage('Load API Config') {
+                        steps {
+                            script {
+                                // Cargar como texto
+                                def contenido = libraryResource "HIS/${config.API_NAME}.groovy"
 
-        stage('Load API Config') {
-            steps {
-                script {
-                    // Cargar como texto
-                    def contenido = libraryResource "HIS/${config.API_NAME}.groovy"
+                                // Interpretar el contenido como código Groovy (esto devuelve un Map)
+                                def configCompleto = evaluate(contenido)
 
-                    // Interpretar el contenido como código Groovy (esto devuelve un Map)
-                    def configCompleto = evaluate(contenido)
+                                // Seleccionar el ambiente: demo o test
+                                def apiConfig = configCompleto[config.AMBIENTE]
 
-                    // Seleccionar el ambiente: demo o test
-                    def apiConfig = configCompleto[config.AMBIENTE]
-
-                    echo "Configuración cargada para API ${config.API_NAME} en ambiente ${config.AMBIENTE}:"
-                    echo "Ruta csproj: ${apiConfig.CS_PROJ_PATH}"
-                    echo "Credenciales: ${apiConfig.CREDENTIALS_ID}"
-                }
-            }   
-        }
-
+                                echo "Configuración cargada para API ${config.API_NAME} en ambiente ${config.AMBIENTE}:"
+                                echo "Ruta csproj: ${apiConfig.CS_PROJ_PATH}"
+                                echo "Credenciales: ${apiConfig.CREDENTIALS_ID}"
+                            }
+                        }   
+                    }
+            }
     }
 }
