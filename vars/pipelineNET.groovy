@@ -35,7 +35,7 @@ def call(Map config) {
                             }
                         }   
                     }
-            stage('Clone Repository') {
+                    stage('Clone Repository') {
                         steps {
                             script {
                                 cloneRepo(
