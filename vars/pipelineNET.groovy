@@ -35,6 +35,63 @@ def call(Map config) {
                             }
                         }   
                     }
+            stage('Clone Repository') {
+                        steps {
+                            script {
+                                cloneRepo(
+                                    branch: env.BRANCH,
+                                    repoPath: env.REPO_PATH,
+                                    repoUrl: env.REPO_URL
+                                )
+                            }
+                        }
+                    }
+
+                    stage('Restore Packages') {
+                        steps {
+                            dir("${env.REPO_PATH}/qc_backend_web") {
+                                sh "dotnet restore ${params.API_NAME}.csproj"
+                            }
+                        }
+                    }
+
+                    stage('Build Project') {
+                        steps {
+                            dir("${env.REPO_PATH}/qc_backend_web") {
+                                sh "dotnet build ${params.API_NAME}.csproj --configuration ${env.CONFIGURATION} --no-restore"
+                            }
+                        }
+                    }
+
+                    stage('Publish Project') {
+                        steps {
+                            dir("${env.REPO_PATH}/qc_backend_web") {
+                                withCredentials([file(credentialsId: params.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                                    sh """
+                                        TEMP_PUBLISH_PROFILE=\$(mktemp)
+                                        cp "\$PUBLISH_SETTINGS" "\$TEMP_PUBLISH_PROFILE"
+
+                                        dotnet msbuild ${params.API_NAME}.csproj \
+                                            /p:DeployOnBuild=true \
+                                            /p:PublishProfile="\$TEMP_PUBLISH_PROFILE" \
+                                            /p:Configuration=${env.CONFIGURATION} \
+                                            /p:Platform="Any CPU"
+
+                                        rm -f "\$TEMP_PUBLISH_PROFILE"
+                                    """
+                                }
+                            }
+                        }
+                    }
+                }
+
+                post {
+                    failure {
+                        echo "❌ Despliegue de ${params.API_NAME} fallido."
+                    }
+                    success {
+                        echo "✅ Despliegue de ${params.API_NAME} exitoso."
+                    }
+                }
             }
-    }
 }
