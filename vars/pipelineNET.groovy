@@ -12,7 +12,7 @@ def call(Map config) {
         environment {
             BUILD_FOLDER = "${env.WORKSPACE}/${env.BUILD_ID}"
             REPO_PATH = "${BUILD_FOLDER}/repo"
-            REPO_URL = 'https://github.com/IT-HEALTH-PROYECTOS-QC/BACKEND_PROYECTO_QC.git'
+            REPO_URL = 'https://github.com/IT-HEALTH/HIS_ITHEALTH_FRONT.git'
             CONFIGURATION = 'Release'
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
         }
@@ -22,7 +22,7 @@ def call(Map config) {
                 steps {
                     script {
                         cloneRepo(
-                            branch: env.BRANCH,
+                            branch: config.AMBIENTE,
                             repoPath: env.REPO_PATH,
                             repoUrl: env.REPO_URL
                         )
