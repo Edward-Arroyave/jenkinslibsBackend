@@ -29,9 +29,12 @@ def call(Map config) {
                                 // Seleccionar el ambiente: demo o test
                                 def apiConfig = configCompleto[config.AMBIENTE]
 
+                                
+
                                 echo "Configuración cargada para API ${config.API_NAME} en ambiente ${config.AMBIENTE}:"
                                 echo "Ruta csproj: ${apiConfig.CS_PROJ_PATH}"
                                 echo "Credenciales: ${apiConfig.CREDENTIALS_ID}"
+                                echo "Rama: ${apiConfig.BRANCH}" 
                             }
                         }   
                     }
@@ -39,7 +42,7 @@ def call(Map config) {
                         steps {
                             script {
                                 cloneRepo(
-                                    branch: env.BRANCH,
+                                    branch: apiConfig.BRANCH,
                                     repoPath: env.REPO_PATH,
                                     repoUrl: env.REPO_URL
                                 )
@@ -49,29 +52,29 @@ def call(Map config) {
 
                     stage('Restore Packages') {
                         steps {
-                            dir("${env.REPO_PATH}/qc_backend_web") {
-                                sh "dotnet restore ${params.API_NAME}.csproj"
+                            dir("${apiConfig.CS_PROJ_PATH}") {
+                                sh "dotnet restore ${config.API_NAME}.csproj"
                             }
                         }
                     }
 
                     stage('Build Project') {
                         steps {
-                            dir("${env.REPO_PATH}/qc_backend_web") {
-                                sh "dotnet build ${params.API_NAME}.csproj --configuration ${env.CONFIGURATION} --no-restore"
+                            dir("${apiConfig.CS_PROJ_PATH}") {
+                                sh "dotnet build ${config.API_NAME}.csproj --configuration ${env.CONFIGURATION} --no-restore"
                             }
                         }
                     }
 
                     stage('Publish Project') {
                         steps {
-                            dir("${env.REPO_PATH}/qc_backend_web") {
-                                withCredentials([file(credentialsId: params.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                            dir("${apiConfig.CS_PROJ_PATH}") {
+                                withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                     sh """
                                         TEMP_PUBLISH_PROFILE=\$(mktemp)
                                         cp "\$PUBLISH_SETTINGS" "\$TEMP_PUBLISH_PROFILE"
 
-                                        dotnet msbuild ${params.API_NAME}.csproj \
+                                        dotnet msbuild ${config.API_NAME}.csproj \
                                             /p:DeployOnBuild=true \
                                             /p:PublishProfile="\$TEMP_PUBLISH_PROFILE" \
                                             /p:Configuration=${env.CONFIGURATION} \
