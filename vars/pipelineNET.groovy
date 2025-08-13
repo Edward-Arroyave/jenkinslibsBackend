@@ -21,7 +21,7 @@ def call(Map config) {
                         steps {
                             script {
                                 // Cargar como texto
-                                def contenido = libraryResource "HIS/${config.API_NAME}.groovy"
+                                def contenido = libraryResource "${config.PRODUCT}/${config.API_NAME}.groovy"
 
                                 // Interpretar el contenido como código Groovy (esto devuelve un Map)
                                 def configCompleto = evaluate(contenido)
