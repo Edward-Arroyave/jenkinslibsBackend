@@ -34,7 +34,7 @@ def call(Map config) {
                 steps {
                     script {
                         // Cargar el diccionario correspondiente desde resources
-                        def configCompleto = load libraryResource("configs/${config.API_NAME}.groovy")
+                        def configCompleto = load libraryResource("resources/HIS/${config.API_NAME}.groovy")
                         // Seleccionar el ambiente: demo o test
                         env.API_CONFIG = configCompleto[config.AMBIENTE]
 
