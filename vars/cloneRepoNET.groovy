@@ -41,11 +41,14 @@ def call(Map config) {
             ]]
         ])
 
-        // def lastCommit = sh(script: "git log -1 --pretty='%H|%an|%s'", returnStdout: true).trim()
-        // def (hash, author, message) = lastCommit.split("\\|")
-        // env.COMMIT_HASH = hash
-        // env.COMMIT_AUTHOR = author
-        // env.COMMIT_MESSAGE = message
+
+        sh "git config --global --add safe.directory ${config.repoPath}"
+        
+        def lastCommit = sh(script: "git log -1 --pretty='%H|%an|%s'", returnStdout: true).trim()
+        def (hash, author, message) = lastCommit.split("\\|")
+        env.COMMIT_HASH = hash
+        env.COMMIT_AUTHOR = author
+        env.COMMIT_MESSAGE = message
 
         // echo "🔍 Último commit: ${env.COMMIT_HASH} por ${env.COMMIT_AUTHOR} - ${env.COMMIT_MESSAGE}"
 
