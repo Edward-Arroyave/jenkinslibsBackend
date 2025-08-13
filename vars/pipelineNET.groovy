@@ -40,7 +40,7 @@ def call(Map config) {
             stage('Clone Repository') {
                 steps {
                     script {
-                        cloneRepo(
+                        cloneRepoNET(
                             branch: apiConfig.BRANCH,
                             repoPath: env.REPO_PATH,
                             repoUrl: env.REPO_URL
