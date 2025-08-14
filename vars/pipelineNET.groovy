@@ -1,5 +1,10 @@
 def call(Map config) {
-    def apis = config.API_NAME        // lista de APIs seleccionadas
+    // Convertir API_NAME en lista real si viene como String
+    def apis = config.API_NAME
+    if (apis instanceof String) {
+        apis = apis.split(',').collect { it.trim() }
+    }
+
     def apisExitosas = []
     def apisFallidas = []
     def apiConfig
@@ -38,7 +43,7 @@ def call(Map config) {
                                     URL: configCompleto.APIS[api].URL[config.AMBIENTE]
                                 ]
 
-                                // Ejecutar stages por API dentro del script block
+                                // Ejecutar pasos por API
                                 dir("${apiConfig.CS_PROJ_PATH}") {
                                     cloneRepoNET(branch: apiConfig.BRANCH, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
                                     sh "dotnet restore ${api}.csproj"
