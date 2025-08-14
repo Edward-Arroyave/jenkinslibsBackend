@@ -1,7 +1,6 @@
 def call(Map config) {
+    // Variable visible para todos los stages
     def apiConfig
-    def apis = config.API_NAME   // ahora es la lista de APIs seleccionadas
-    def apisDesplegadas = []    // para registrar las APIs que se desplegaron
 
     pipeline {
         agent {
@@ -11,6 +10,7 @@ def call(Map config) {
                 label 'docker-node'
             }
         }
+        
 
         environment {
             BUILD_FOLDER = "${env.WORKSPACE}/${env.BUILD_ID}"
@@ -21,62 +21,75 @@ def call(Map config) {
         }
 
         stages {
-            stage('Desplegar APIs') {
+           stage('Load API Config') {
                 steps {
                     script {
-                        for (api in apis) {
-                            echo "=== Desplegando ${api} ==="
+                        // Cargar config
+                        def contenido = libraryResource "${config.PRODUCT}.groovy"
+                        def configCompleto = evaluate(contenido)
 
-                            // Cargar configuración para esta API
-                            def contenido = libraryResource "${config.PRODUCT}.groovy"
-                            def configCompleto = evaluate(contenido)
-                            apiConfig = [
-                                BRANCH: configCompleto.AMBIENTES[config.AMBIENTE].BRANCH,
-                                CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
-                                CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
-                                URL: configCompleto.APIS[api].URL[config.AMBIENTE]
-                            ]
+                        // Unificar en un Map para usarlo en los otros stages
+                        apiConfig = [
+                            BRANCH: configCompleto.AMBIENTES[config.AMBIENTE].BRANCH,
+                            CS_PROJ_PATH: configCompleto.APIS[config.API_NAME].REPO_PATH,
+                            CREDENTIALS_ID: configCompleto.APIS[config.API_NAME].CREDENCIALES[config.AMBIENTE],
+                            URL: configCompleto.APIS[config.API_NAME].URL[config.AMBIENTE]
+                        ]
 
-                            echo "Configuración cargada para ${api} en ambiente ${config.AMBIENTE}"
+                        echo "Configuración cargada para API ${config.API_NAME} en ambiente ${config.AMBIENTE}:"
+                        echo "Ruta csproj: ${apiConfig.CS_PROJ_PATH}"
+                        echo "Credenciales: ${apiConfig.CREDENTIALS_ID}"
+                        echo "Rama: ${apiConfig.BRANCH}"
+                        echo "URL: ${apiConfig.URL}"
+                    }
+                }
+            }
 
-                            // Aquí van todos los stages por API
-                            stage("Clone ${api}") {
-                                cloneRepoNET(branch: apiConfig.BRANCH, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
-                            }
 
-                            stage("Restore ${api}") {
-                                dir("${apiConfig.CS_PROJ_PATH}") {
-                                    sh "dotnet restore ${api}.csproj"
-                                }
-                            }
+            stage('Clone Repository') {
+                steps {
+                    script {
+                        cloneRepoNET(
+                            branch: apiConfig.BRANCH,
+                            repoPath: env.REPO_PATH,
+                            repoUrl: env.REPO_URL
+                        )
+                    }
+                }
+            }
 
-                            stage("Build ${api}") {
-                                dir("${apiConfig.CS_PROJ_PATH}") {
-                                    sh "dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore"
-                                }
-                            }
+            stage('Restore Packages') {
+                steps {
+                    dir("${apiConfig.CS_PROJ_PATH}") {
+                        sh "dotnet restore ${config.API_NAME}.csproj"
+                    }
+                }
+            }
 
-                            stage("Publish ${api}") {
-                                dir("${apiConfig.CS_PROJ_PATH}") {
-                                    withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                        sh """
-                                            TEMP_PUBLISH_PROFILE=\$(mktemp)
-                                            cp "\$PUBLISH_SETTINGS" "\$TEMP_PUBLISH_PROFILE"
+            stage('Build Project') {
+                steps {
+                    dir("${apiConfig.CS_PROJ_PATH}") {
+                        sh "dotnet build ${config.API_NAME}.csproj --configuration ${env.CONFIGURATION} --no-restore"
+                    }
+                }
+            }
 
-                                            dotnet msbuild ${api}.csproj \
-                                                /p:DeployOnBuild=true \
-                                                /p:PublishProfile="\$TEMP_PUBLISH_PROFILE" \
-                                                /p:Configuration=${env.CONFIGURATION} \
-                                                /p:Platform="Any CPU"
+            stage('Publish Project') {
+                steps {
+                    dir("${apiConfig.CS_PROJ_PATH}") {
+                        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                            sh """
+                                TEMP_PUBLISH_PROFILE=\$(mktemp)
+                                cp "\$PUBLISH_SETTINGS" "\$TEMP_PUBLISH_PROFILE"
 
-                                            rm -f "\$TEMP_PUBLISH_PROFILE"
-                                        """
-                                    }
-                                }
-                            }
+                                dotnet msbuild ${config.API_NAME}.csproj \
+                                    /p:DeployOnBuild=true \
+                                    /p:PublishProfile="\$TEMP_PUBLISH_PROFILE" \
+                                    /p:Configuration=${env.CONFIGURATION} \
+                                    /p:Platform="Any CPU"
 
-                            // Registrar API exitosa
-                            apisDesplegadas << api
+                                rm -f "\$TEMP_PUBLISH_PROFILE"
+                            """
                         }
                     }
                 }
@@ -84,15 +97,20 @@ def call(Map config) {
         }
 
         post {
+            failure {
+                echo "❌ Despliegue de ${config.API_NAME} fallido."
+            }
+            success {
+                echo "✅ Despliegue de ${config.API_NAME} exitoso."
+            }
             always {
                 script {
-                    // Aquí envías UN SOLO mensaje con todas las APIs que se desplegaron
-                    def mensaje = "✅ Despliegue completado para las APIs: ${apisDesplegadas.join(', ')} en ambiente ${config.AMBIENTE}"
-                    echo mensaje
-                    sendNotificationTeamsNET(mensaje)
+                    sendNotificationTeamsNET()
                 }
                 cleanWs()
+            
             }
         }
+
     }
 }
