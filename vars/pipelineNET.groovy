@@ -21,6 +21,7 @@ def call(Map config) {
         environment {
             BUILD_FOLDER = "${env.WORKSPACE}/${env.BUILD_ID}"
             REPO_PATH = "${BUILD_FOLDER}/repo"
+            REPO_URL = "${config.REPO_URL}"
             CONFIGURATION = 'Release'
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
         }
@@ -37,7 +38,7 @@ def call(Map config) {
                         echo "🌿 Rama a usar para el despliegue: ${branch}"
 
                         stage("Clone Repository ${branch}") {
-                            cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: config.REPO_URL)
+                            cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
                         }
 
                         // Guardamos configCompleto en variable local para usar después
