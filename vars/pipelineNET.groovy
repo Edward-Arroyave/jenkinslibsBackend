@@ -108,21 +108,21 @@ def call(Map config) {
         }
 
         post {
-    always {
-        script {
-            def mensaje = ""
-            if (apisExitosas) { mensaje += "✅ Exitosas: ${apisExitosas.join(', ')}\n" }
-            if (apisFallidas) { mensaje += "❌ Fallidas: ${apisFallidas.join(', ')}" }
+            always {
+                script {
+                    def mensaje = ""
+                    if (apisExitosas) { mensaje += "✅ Exitosas: ${apisExitosas.join(', ')}\n" }
+                    if (apisFallidas) { mensaje += "❌ Fallidas: ${apisFallidas.join(', ')}" }
 
-            // Llamada correcta
-            sendNotificationTeamsNET([
-                mensaje: mensaje
-            ])
+                    // Llamada correcta
+                    sendNotificationTeamsNET([
+                        mensaje: mensaje
+                    ])
+                }
+
+                cleanWs()
+            }
         }
-
-        cleanWs()
-    }
-}
     }
 }
     
