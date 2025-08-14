@@ -5,6 +5,17 @@ return [
     ],
 
     APIS: [
+        API_CRTZ_WEB: [
+            REPO_PATH: "${env.REPO_PATH}/API_HIS/API_HIS",
+            CREDENCIALES: [
+                demo: "CredencialesDemoApi1",
+                test: "PROFILE_HIS_API_HIS_TEST"
+            ],
+            URL: [
+                demo: "https://his-backend-annar-demo.azurewebsites.net",
+                test: "https://his-backend-caracterizacion-annar-pruebas.azurewebsites.net"
+            ]
+        ],
         API_HIS: [
             REPO_PATH: "${env.REPO_PATH}/API_HIS/API_HIS",
             CREDENCIALES: [
