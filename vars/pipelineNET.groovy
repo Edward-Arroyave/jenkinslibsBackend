@@ -77,25 +77,21 @@ def call(Map config) {
                                     }
                                 }
 
-                                stage("Publish ${api}") {
+                              stage("Publish ${api}") {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
-                                        withCredentials([
-                                            usernamePassword(
-                                                credentialsId: apiConfig.CREDENTIALS_ID,
-                                                usernameVariable: 'FTP_USER',
-                                                passwordVariable: 'FTP_PASS'
-                                            )
-                                        ]) {
+                                        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             sh """
                                                 # Crear directorio temporal de publicación
                                                 PUBLISH_DIR=\$(mktemp -d)
-                                                
-                                                # Publicar los archivos localmente
+
+                                                # Publicar localmente
                                                 dotnet publish ${api}.csproj -c ${env.CONFIGURATION} -o "\$PUBLISH_DIR"
 
-                                                # Configura manualmente el host y la ruta remota del servidor FTP
-                                                FTP_HOST=ftp.tu-servidor.com
-                                                REMOTE_PATH=/ruta/remota/del/proyecto
+                                                # Extraer host, usuario, password y ruta remota desde el archivo .PublishSettings
+                                                FTP_HOST=\$(grep -oP 'publishUrl="\\K[^"]+' "\$PUBLISH_SETTINGS" | sed 's/:.*//')
+                                                FTP_USER=\$(grep -oP 'userName="\\K[^"]+' "\$PUBLISH_SETTINGS")
+                                                FTP_PASS=\$(grep -oP 'userPWD="\\K[^"]+' "\$PUBLISH_SETTINGS")
+                                                REMOTE_PATH=\$(grep -oP 'destinationAppUrl="\\K[^"]+' "\$PUBLISH_SETTINGS" | sed 's|^.*://[^/]*/||')
 
                                                 echo "Subiendo archivos vía FTP a \$FTP_HOST, ruta: \$REMOTE_PATH"
 
@@ -103,7 +99,8 @@ def call(Map config) {
                                                 lftp -u "\$FTP_USER","\$FTP_PASS" \$FTP_HOST <<EOF
                                                 mirror -R "\$PUBLISH_DIR" "\$REMOTE_PATH"
                                                 quit
-                                EOF
+                                                EOF
+
                                                 # Limpiar directorio temporal
                                                 rm -rf "\$PUBLISH_DIR"
                                             """
