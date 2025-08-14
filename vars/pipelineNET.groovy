@@ -1,5 +1,4 @@
 def call(Map config) {
-    // Convertir API_NAME en lista real si viene como String
     def apis = config.API_NAME
     if (apis instanceof String) {
         apis = apis.split(',').collect { it.trim() }
@@ -33,15 +32,14 @@ def call(Map config) {
                         def contenido = libraryResource "${config.PRODUCT}.groovy"
                         def configCompleto = evaluate(contenido)
 
-                        // Solo tomar la rama por ambiente
                         def branch = configCompleto.AMBIENTES[config.AMBIENTE].BRANCH
 
                         stage("Clone Repository ${branch}") {
                             cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
                         }
 
-                        // Guardamos config completo para usar después en cada API
-                        env.CONFIG_COMPLETO = configCompleto
+                        // Guardamos configCompleto en variable local para usar después
+                        return configCompleto
                     }
                 }
             }
@@ -49,7 +47,8 @@ def call(Map config) {
             stage('Deploy APIs') {
                 steps {
                     script {
-                        def configCompleto = env.CONFIG_COMPLETO
+                        def configCompleto = evaluate(libraryResource("${config.PRODUCT}.groovy"))
+
                         for (api in apis) {
                             echo "=== Desplegando API: ${api} ==="
                             try {
@@ -104,9 +103,11 @@ def call(Map config) {
         post {
             always {
                 script {
-                    def mensaje = "Despliegue completado en ambiente ${config.AMBIENTE}\n"
-                    if (apisExitosas) { mensaje += "✅ Exitosas: ${apisExitosas.join(', ')}\n" }
-                    if (apisFallidas) { mensaje += "❌ Fallidas: ${apisFallidas.join(', ')}" }
+                    def mensaje = [
+                        title: "Despliegue completado en ambiente ${config.AMBIENTE}",
+                        exitosas: apisExitosas,
+                        fallidas: apisFallidas
+                    ]
                     sendNotificationTeamsNET(mensaje)
                 }
                 cleanWs()
