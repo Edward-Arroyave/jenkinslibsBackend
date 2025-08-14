@@ -20,22 +20,33 @@ def call(Map config) {
         }
 
         stages {
-            stage('Load API Config') {
+           stage('Load API Config') {
                 steps {
                     script {
-                        def contenido = libraryResource "${config.PRODUCT}/${config.API_NAME}.groovy"
+                        // Cargar config
+                        def contenido = libraryResource "${config.PRODUCT}.groovy"
                         def configCompleto = evaluate(contenido)
 
-                        // Asignar a la variable global
-                        apiConfig = configCompleto[config.AMBIENTE]
+                        // Obtener rama y repo/credenciales de la API seleccionada
+                        def branch       = configCompleto.AMBIENTES[config.AMBIENTE].BRANCH
+                        def repoPath     = configCompleto.APIS[config.API_NAME].REPO_PATH
+                        def credenciales = configCompleto.APIS[config.API_NAME].CREDENCIALES[config.AMBIENTE]
+
+                        // Unificar en un Map para usarlo en los otros stages
+                        apiConfig = [
+                            BRANCH: branch,
+                            CS_PROJ_PATH: repoPath,
+                            CREDENTIALS_ID: credenciales
+                        ]
 
                         echo "Configuración cargada para API ${config.API_NAME} en ambiente ${config.AMBIENTE}:"
                         echo "Ruta csproj: ${apiConfig.CS_PROJ_PATH}"
                         echo "Credenciales: ${apiConfig.CREDENTIALS_ID}"
-                        echo "Rama: ${apiConfig.BRANCH}" 
+                        echo "Rama: ${apiConfig.BRANCH}"
                     }
                 }
             }
+
 
             stage('Clone Repository') {
                 steps {
