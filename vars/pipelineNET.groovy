@@ -1,5 +1,7 @@
 def call(Map config) {
-    // Variable visible para todos los stages
+    def apis = config.API_NAME        // lista de APIs seleccionadas
+    def apisExitosas = []
+    def apisFallidas = []
     def apiConfig
 
     pipeline {
@@ -10,7 +12,6 @@ def call(Map config) {
                 label 'docker-node'
             }
         }
-        
 
         environment {
             BUILD_FOLDER = "${env.WORKSPACE}/${env.BUILD_ID}"
@@ -21,75 +22,48 @@ def call(Map config) {
         }
 
         stages {
-           stage('Load API Config') {
+            stage('Desplegar APIs') {
                 steps {
                     script {
-                        // Cargar config
-                        def contenido = libraryResource "${config.PRODUCT}.groovy"
-                        def configCompleto = evaluate(contenido)
+                        for (api in apis) {
+                            echo "=== Desplegando ${api} ==="
+                            try {
+                                // Cargar config
+                                def contenido = libraryResource "${config.PRODUCT}.groovy"
+                                def configCompleto = evaluate(contenido)
+                                apiConfig = [
+                                    BRANCH: configCompleto.AMBIENTES[config.AMBIENTE].BRANCH,
+                                    CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
+                                    CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
+                                    URL: configCompleto.APIS[api].URL[config.AMBIENTE]
+                                ]
 
-                        // Unificar en un Map para usarlo en los otros stages
-                        apiConfig = [
-                            BRANCH: configCompleto.AMBIENTES[config.AMBIENTE].BRANCH,
-                            CS_PROJ_PATH: configCompleto.APIS[config.API_NAME].REPO_PATH,
-                            CREDENTIALS_ID: configCompleto.APIS[config.API_NAME].CREDENCIALES[config.AMBIENTE],
-                            URL: configCompleto.APIS[config.API_NAME].URL[config.AMBIENTE]
-                        ]
+                                // Ejecutar stages por API dentro del script block
+                                dir("${apiConfig.CS_PROJ_PATH}") {
+                                    cloneRepoNET(branch: apiConfig.BRANCH, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
+                                    sh "dotnet restore ${api}.csproj"
+                                    sh "dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore"
+                                    withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                                        sh """
+                                            TEMP_PUBLISH_PROFILE=\$(mktemp)
+                                            cp "\$PUBLISH_SETTINGS" "\$TEMP_PUBLISH_PROFILE"
 
-                        echo "Configuración cargada para API ${config.API_NAME} en ambiente ${config.AMBIENTE}:"
-                        echo "Ruta csproj: ${apiConfig.CS_PROJ_PATH}"
-                        echo "Credenciales: ${apiConfig.CREDENTIALS_ID}"
-                        echo "Rama: ${apiConfig.BRANCH}"
-                        echo "URL: ${apiConfig.URL}"
-                    }
-                }
-            }
+                                            dotnet msbuild ${api}.csproj \
+                                                /p:DeployOnBuild=true \
+                                                /p:PublishProfile="\$TEMP_PUBLISH_PROFILE" \
+                                                /p:Configuration=${env.CONFIGURATION} \
+                                                /p:Platform="Any CPU"
 
+                                            rm -f "\$TEMP_PUBLISH_PROFILE"
+                                        """
+                                    }
+                                }
 
-            stage('Clone Repository') {
-                steps {
-                    script {
-                        cloneRepoNET(
-                            branch: apiConfig.BRANCH,
-                            repoPath: env.REPO_PATH,
-                            repoUrl: env.REPO_URL
-                        )
-                    }
-                }
-            }
-
-            stage('Restore Packages') {
-                steps {
-                    dir("${apiConfig.CS_PROJ_PATH}") {
-                        sh "dotnet restore ${config.API_NAME}.csproj"
-                    }
-                }
-            }
-
-            stage('Build Project') {
-                steps {
-                    dir("${apiConfig.CS_PROJ_PATH}") {
-                        sh "dotnet build ${config.API_NAME}.csproj --configuration ${env.CONFIGURATION} --no-restore"
-                    }
-                }
-            }
-
-            stage('Publish Project') {
-                steps {
-                    dir("${apiConfig.CS_PROJ_PATH}") {
-                        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                            sh """
-                                TEMP_PUBLISH_PROFILE=\$(mktemp)
-                                cp "\$PUBLISH_SETTINGS" "\$TEMP_PUBLISH_PROFILE"
-
-                                dotnet msbuild ${config.API_NAME}.csproj \
-                                    /p:DeployOnBuild=true \
-                                    /p:PublishProfile="\$TEMP_PUBLISH_PROFILE" \
-                                    /p:Configuration=${env.CONFIGURATION} \
-                                    /p:Platform="Any CPU"
-
-                                rm -f "\$TEMP_PUBLISH_PROFILE"
-                            """
+                                apisExitosas << api
+                            } catch (err) {
+                                echo "❌ Error en ${api}: ${err}"
+                                apisFallidas << api
+                            }
                         }
                     }
                 }
@@ -97,20 +71,15 @@ def call(Map config) {
         }
 
         post {
-            failure {
-                echo "❌ Despliegue de ${config.API_NAME} fallido."
-            }
-            success {
-                echo "✅ Despliegue de ${config.API_NAME} exitoso."
-            }
             always {
                 script {
-                    sendNotificationTeamsNET()
+                    def mensaje = "Despliegue completado en ambiente ${config.AMBIENTE}\n"
+                    if (apisExitosas) { mensaje += "✅ Exitosas: ${apisExitosas.join(', ')}\n" }
+                    if (apisFallidas) { mensaje += "❌ Fallidas: ${apisFallidas.join(', ')}" }
+                    sendNotificationTeamsNET(mensaje)
                 }
                 cleanWs()
-            
             }
         }
-
     }
 }
