@@ -10,6 +10,27 @@ def call(Map config) {
                 label 'docker-node'
             }
         }
+         parameters {
+            choice(
+                name: 'API_NAMES',
+                choices: [
+                    'API_HIS',
+                    'API_HIS_APP',
+                    'Schedule.Api',
+                    'ApiElectronicInvoice',
+                    'Financial.Api',
+                    'ApiInteroperability',
+                    'Invoice.Api',
+                    'ApiPatient',
+                    'ApiTask',
+                    'API_HIS_POCT',
+                    'API_POC',
+                    'API_CRTZ_WEB'
+                ],
+                description: 'Selecciona una o varias APIs',
+                multiple: true
+            )
+        }
 
         environment {
             BUILD_FOLDER = "${env.WORKSPACE}/${env.BUILD_ID}"
