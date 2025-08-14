@@ -21,7 +21,7 @@ def call(Map config) {
         environment {
             BUILD_FOLDER = "${env.WORKSPACE}/${env.BUILD_ID}"
             REPO_PATH = "${BUILD_FOLDER}/repo"
-            REPO_URL = 'https://github.com/IT-HEALTH/HIS_ITHEALTH_BACK.git'
+            REPO_URL = config.REPO_URL
             CONFIGURATION = 'Release'
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
         }
