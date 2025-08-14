@@ -4,6 +4,8 @@ def call(Map config) {
         apis = apis.split(',').collect { it.trim() }
     }
 
+    echo "APIs seleccionadas para despliegue: ${apis.join(', ')}"
+
     def apisExitosas = []
     def apisFallidas = []
 
@@ -28,11 +30,12 @@ def call(Map config) {
             stage('Load Config & Clone Repo') {
                 steps {
                     script {
-                        echo "🔄 Cargando configuración y clonando repositorio..."
+                        echo "🔄 Cargando configuración..."
                         def contenido = libraryResource "${config.PRODUCT}.groovy"
                         def configCompleto = evaluate(contenido)
 
                         def branch = configCompleto.AMBIENTES[config.AMBIENTE].BRANCH
+                        echo "🌿 Rama a usar para el despliegue: ${branch}"
 
                         stage("Clone Repository ${branch}") {
                             cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
@@ -57,6 +60,10 @@ def call(Map config) {
                                     CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
                                     URL: configCompleto.APIS[api].URL[config.AMBIENTE]
                                 ]
+
+                                echo "Ruta proyecto: ${apiConfig.CS_PROJ_PATH}"
+                                echo "Credenciales usadas: ${apiConfig.CREDENTIALS_ID}"
+                                echo "URL de despliegue: ${apiConfig.URL}"
 
                                 stage("Restore ${api}") {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
@@ -103,11 +110,8 @@ def call(Map config) {
         post {
             always {
                 script {
-                    def mensaje = [
-                        title: "Despliegue completado en ambiente ${config.AMBIENTE}",
-                        exitosas: apisExitosas,
-                        fallidas: apisFallidas
-                    ]
+                    if (apisExitosas) { mensaje += "✅ Exitosas: ${apisExitosas.join(', ')}\n" }
+                    if (apisFallidas) { mensaje += "❌ Fallidas: ${apisFallidas.join(', ')}" }
                     sendNotificationTeamsNET(mensaje)
                 }
                 cleanWs()
