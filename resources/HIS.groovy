@@ -26,6 +26,17 @@ return [
                 demo: "https://agendamiento-api-his-co-demo-eth4erhxh6d2g0fz.eastus2-01.azurewebsites.net/index.html",
                 test: "https://agendamiento-api-his-co-pruebas-btc6csgbezbxgqep.eastus2-01.azurewebsites.net"
             ]
+        ],
+        ApiInteroperability: [
+            REPO_PATH: "${env.REPO_PATH}/API_HIS/Schedule.Api",
+            CREDENCIALES: [
+                demo: "PROFILE_HIS_Schedule.Api_DEMO",
+                test: "PROFILE_HIS_Schedule.Api_TEST"
+            ],
+            URL: [
+                demo: "https://his-backend-interoperab-demo-fabhf0dgb8e4fng0.eastus2-01.azurewebsites.net",
+                test: "https://his-backend-interoperab-pruebas-e7c0frh8d3fzamdx.eastus2-01.azurewebsites.net"
+            ]
         ]
     ]
 ]
