@@ -102,6 +102,14 @@ def call(Map config) {
             success {
                 echo "✅ Despliegue de ${config.API_NAME} exitoso."
             }
+            always {
+                script {
+                    sendNotificationTeams()
+                }
+                cleanWs()
+            
+            }
         }
+
     }
 }
