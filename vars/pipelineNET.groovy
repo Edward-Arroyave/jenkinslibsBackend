@@ -77,37 +77,24 @@ def call(Map config) {
                                     }
                                 }
 
-                              stage("Publish ${api}") {
+                                stage("Publish ${api}") {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             sh """
-                                                # Crear directorio temporal de publicación
-                                                PUBLISH_DIR=\$(mktemp -d)
+                                                TEMP_PUBLISH_PROFILE=\$(mktemp)
+                                                cp "\$PUBLISH_SETTINGS" "\$TEMP_PUBLISH_PROFILE"
 
-                                                # Publicar localmente
-                                                dotnet publish ${api}.csproj -c ${env.CONFIGURATION} -o "\$PUBLISH_DIR"
+                                                dotnet msbuild ${api}.csproj \
+                                                    /p:DeployOnBuild=true \
+                                                    /p:PublishProfile="\$TEMP_PUBLISH_PROFILE" \
+                                                    /p:Configuration=${env.CONFIGURATION} \
+                                                    /p:Platform="Any CPU"
 
-                                                # Extraer host, usuario, password y ruta remota desde el archivo .PublishSettings
-                                                FTP_HOST=\$(grep -oP 'publishUrl="\\K[^"]+' "\$PUBLISH_SETTINGS" | sed 's/:.*//')
-                                                FTP_USER=\$(grep -oP 'userName="\\K[^"]+' "\$PUBLISH_SETTINGS")
-                                                FTP_PASS=\$(grep -oP 'userPWD="\\K[^"]+' "\$PUBLISH_SETTINGS")
-                                                REMOTE_PATH=\$(grep -oP 'destinationAppUrl="\\K[^"]+' "\$PUBLISH_SETTINGS" | sed 's|^.*://[^/]*/||')
-
-                                                echo "Subiendo archivos vía FTP a \$FTP_HOST, ruta: \$REMOTE_PATH"
-
-                                                # Subir archivos con lftp
-                                                lftp -u "\$FTP_USER","\$FTP_PASS" \$FTP_HOST <<EOF
-                                                mirror -R "\$PUBLISH_DIR" "\$REMOTE_PATH"
-                                                quit
-                                                EOF
-
-                                                # Limpiar directorio temporal
-                                                rm -rf "\$PUBLISH_DIR"
+                                                rm -f "\$TEMP_PUBLISH_PROFILE"
                                             """
                                         }
                                     }
                                 }
-
 
                                 apisExitosas << api
                             } catch (err) {
