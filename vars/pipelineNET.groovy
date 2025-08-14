@@ -27,16 +27,11 @@ def call(Map config) {
                         def contenido = libraryResource "${config.PRODUCT}.groovy"
                         def configCompleto = evaluate(contenido)
 
-                        // Obtener rama y repo/credenciales de la API seleccionada
-                        def branch       = configCompleto.AMBIENTES[config.AMBIENTE].BRANCH
-                        def repoPath     = configCompleto.APIS[config.API_NAME].REPO_PATH
-                        def credenciales = configCompleto.APIS[config.API_NAME].CREDENCIALES[config.AMBIENTE]
-
                         // Unificar en un Map para usarlo en los otros stages
                         apiConfig = [
-                            BRANCH: branch,
-                            CS_PROJ_PATH: repoPath,
-                            CREDENTIALS_ID: credenciales
+                            BRANCH: configCompleto.AMBIENTES[config.AMBIENTE].BRANCH,
+                            CS_PROJ_PATH: configCompleto.APIS[config.API_NAME].REPO_PATH,
+                            CREDENTIALS_ID: configCompleto.APIS[config.API_NAME].CREDENCIALES[config.AMBIENTE]
                         ]
 
                         echo "Configuración cargada para API ${config.API_NAME} en ambiente ${config.AMBIENTE}:"
