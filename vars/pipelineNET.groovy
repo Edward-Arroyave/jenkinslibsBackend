@@ -104,7 +104,7 @@ def call(Map config) {
             }
             always {
                 script {
-                    sendNotificationTeams()
+                    sendNotificationTeamsNET()
                 }
                 cleanWs()
             
