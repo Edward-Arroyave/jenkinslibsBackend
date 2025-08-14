@@ -19,7 +19,7 @@ return [
         API_HIS: [
             REPO_PATH: "${env.REPO_PATH}/API_HIS/API_HIS",
             CREDENCIALES: [
-                demo: "CredencialesDemoApi1",
+                demo: "PROFILE_HIS_API_HIS_DEMO",
                 test: "PROFILE_HIS_API_HIS_TEST"
             ],
             URL: [
