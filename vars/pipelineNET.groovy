@@ -31,7 +31,7 @@ def call(Map config) {
                         apiConfig = [
                             BRANCH: configCompleto.AMBIENTES[config.AMBIENTE].BRANCH,
                             CS_PROJ_PATH: configCompleto.APIS[config.API_NAME].REPO_PATH,
-                            CREDENTIALS_ID: configCompleto.APIS[config.API_NAME].CREDENCIALES[config.AMBIENTE]
+                            CREDENTIALS_ID: configCompleto.APIS[config.API_NAME].CREDENCIALES[config.AMBIENTE],
                             URL: configCompleto.APIS[config.API_NAME].URL[config.AMBIENTE]
                         ]
 
