@@ -112,8 +112,8 @@ def call(Map config) {
                 script {
                     def APIS_FAILURE = ""
                     def APIS_SUCCESSFUL = ""
-                    if (apisExitosas) { APIS_SUCCESSFUL += "✅ Exitosas: ${apisExitosas.join(', ')}\n" }
-                    if (apisFallidas) { APIS_FAILURE    += "❌ Fallidas: ${apisFallidas.join(', ')}" }
+                    if (apisExitosas) { APIS_SUCCESSFUL += "✅ ${apisExitosas.join(', ')}\n" }
+                    if (apisFallidas) { APIS_FAILURE    += "❌ ${apisFallidas.join(', ')}" }
 
                     // Llamada correcta
                     sendNotificationTeamsNET([
