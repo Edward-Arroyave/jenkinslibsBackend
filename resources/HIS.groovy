@@ -1,15 +1,9 @@
 return [
-    // PRIMER NIVEL: Ambientes y ramas comunes
     AMBIENTES: [
-        demo: [
-            BRANCH: "demo"
-        ],
-        test: [
-            BRANCH: "test"
-        ]
+        demo: [ BRANCH: "demo" ],
+        test: [ BRANCH: "test" ]
     ],
 
-    // SEGUNDO NIVEL: APIs
     APIS: [
         API_HIS: [
             REPO_PATH: "${env.REPO_PATH}/API_HIS/API_HIS",
@@ -32,7 +26,6 @@ return [
                 demo: "https://agendamiento-api-his-co-demo-eth4erhxh6d2g0fz.eastus2-01.azurewebsites.net/index.html",
                 test: "https://agendamiento-api-his-co-pruebas-btc6csgbezbxgqep.eastus2-01.azurewebsites.net"
             ]
-            
         ]
     ]
 ]
