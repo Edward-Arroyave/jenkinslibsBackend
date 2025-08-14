@@ -79,7 +79,13 @@ def call(Map config) {
 
                                 stage("Publish ${api}") {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
-                                        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                                        withCredentials([
+                                            usernamePassword(
+                                                credentialsId: apiConfig.CREDENTIALS_ID,
+                                                usernameVariable: 'FTP_USER',
+                                                passwordVariable: 'FTP_PASS'
+                                            )
+                                        ]) {
                                             sh """
                                                 # Crear directorio temporal de publicación
                                                 PUBLISH_DIR=\$(mktemp -d)
@@ -87,11 +93,9 @@ def call(Map config) {
                                                 # Publicar los archivos localmente
                                                 dotnet publish ${api}.csproj -c ${env.CONFIGURATION} -o "\$PUBLISH_DIR"
 
-                                                # Extraer credenciales FTP del archivo .PublishSettings (XML)
-                                                FTP_HOST=\$(xmllint --xpath "string(//publishProfile/@publishUrl)" "\$PUBLISH_SETTINGS" | sed 's/:.*//')
-                                                FTP_USER=\$(xmllint --xpath "string(//publishProfile/@userName)" "\$PUBLISH_SETTINGS")
-                                                FTP_PASS=\$(xmllint --xpath "string(//publishProfile/@userPWD)" "\$PUBLISH_SETTINGS")
-                                                REMOTE_PATH=\$(xmllint --xpath "string(//publishProfile/@destinationAppUrl)" "\$PUBLISH_SETTINGS" | sed 's|^.*://[^/]*/||')
+                                                # Configura manualmente el host y la ruta remota del servidor FTP
+                                                FTP_HOST=ftp.tu-servidor.com
+                                                REMOTE_PATH=/ruta/remota/del/proyecto
 
                                                 echo "Subiendo archivos vía FTP a \$FTP_HOST, ruta: \$REMOTE_PATH"
 
@@ -99,13 +103,14 @@ def call(Map config) {
                                                 lftp -u "\$FTP_USER","\$FTP_PASS" \$FTP_HOST <<EOF
                                                 mirror -R "\$PUBLISH_DIR" "\$REMOTE_PATH"
                                                 quit
-                                                EOF
+                                EOF
                                                 # Limpiar directorio temporal
                                                 rm -rf "\$PUBLISH_DIR"
                                             """
                                         }
                                     }
                                 }
+
 
                                 apisExitosas << api
                             } catch (err) {
