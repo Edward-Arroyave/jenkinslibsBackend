@@ -31,21 +31,21 @@ def call(Map config) {
     }
 
     // Enviar notificación a Teams
-  wrap([$class: 'BuildUser']) {
-    office365ConnectorSend(
-        status: status,
-        message: "${emoji} ${statusText}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        adaptiveCards: true,
-        color: color,
-        factDefinitions: [
-            [name: "Build triggered by", template: "${env.BUILD_USER_ID}"], // <-- solo ID
-            [name: "Commit Author", template: "${env.COMMIT_AUTHOR}"],
-            [name: "Commit Message", template: "${env.COMMIT_MESSAGE}"],
-            [name: "Commit Hash", template: "${env.COMMIT_HASH}"],
-            [name: "Duration", template: durationText],
-        ]
-    )
-}
+    wrap([$class: 'BuildUser']) {
+        office365ConnectorSend(
+            status: status,
+            message: "${emoji} ${statusText}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            adaptiveCards: true,
+            color: color,
+            factDefinitions: [
+                [name: "Build triggered by", template: "${env.BUILD_USER_ID}"],
+                [name: "Commit Author", template: "${env.COMMIT_AUTHOR}"],
+                [name: "Commit Message", template: "${env.COMMIT_MESSAGE}"],
+                [name: "Commit Hash", template: "${env.COMMIT_HASH}"],
+                [name: "Duration", template: durationText],
+            ]
+        )
+    }
 
 
     echo "📢 Notificación enviada: ${statusText} (${durationText})"
