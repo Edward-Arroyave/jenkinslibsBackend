@@ -81,16 +81,27 @@ def call(Map config) {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             sh """
-                                                TEMP_PUBLISH_PROFILE=\$(mktemp)
-                                                cp "\$PUBLISH_SETTINGS" "\$TEMP_PUBLISH_PROFILE"
+                                                # Crear directorio temporal de publicación
+                                                PUBLISH_DIR=\$(mktemp -d)
+                                                
+                                                # Publicar los archivos localmente
+                                                dotnet publish ${api}.csproj -c ${env.CONFIGURATION} -o "\$PUBLISH_DIR"
 
-                                                dotnet msbuild ${api}.csproj \
-                                                    /p:DeployOnBuild=true \
-                                                    /p:PublishProfile="\$TEMP_PUBLISH_PROFILE" \
-                                                    /p:Configuration=${env.CONFIGURATION} \
-                                                    /p:Platform="Any CPU"
+                                                # Extraer credenciales FTP del archivo .PublishSettings (XML)
+                                                FTP_HOST=\$(xmllint --xpath "string(//publishProfile/@publishUrl)" "\$PUBLISH_SETTINGS" | sed 's/:.*//')
+                                                FTP_USER=\$(xmllint --xpath "string(//publishProfile/@userName)" "\$PUBLISH_SETTINGS")
+                                                FTP_PASS=\$(xmllint --xpath "string(//publishProfile/@userPWD)" "\$PUBLISH_SETTINGS")
+                                                REMOTE_PATH=\$(xmllint --xpath "string(//publishProfile/@destinationAppUrl)" "\$PUBLISH_SETTINGS" | sed 's|^.*://[^/]*/||')
 
-                                                rm -f "\$TEMP_PUBLISH_PROFILE"
+                                                echo "Subiendo archivos vía FTP a \$FTP_HOST, ruta: \$REMOTE_PATH"
+
+                                                # Subir archivos con lftp
+                                                lftp -u "\$FTP_USER","\$FTP_PASS" \$FTP_HOST <<EOF
+                                                mirror -R "\$PUBLISH_DIR" "\$REMOTE_PATH"
+                                                quit
+                                                EOF
+                                                # Limpiar directorio temporal
+                                                rm -rf "\$PUBLISH_DIR"
                                             """
                                         }
                                     }

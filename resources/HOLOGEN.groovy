@@ -6,7 +6,7 @@ return [
 
     APIS: [
         Api_BioInformatica: [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/API_CRTZ_WEB",
+            REPO_PATH: "${env.REPO_PATH}/API_Hologen/Api_BioInformatica",
             CREDENCIALES: [
                 demo: "",
                 test: "PROFILE_HIS_API_CRTZ_WEB_TEST"
@@ -17,7 +17,7 @@ return [
             ]
         ],
         API_Hologen: [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/API_HIS",
+            REPO_PATH: "${env.REPO_PATH}/API_Hologen/API_HIS",
             CREDENCIALES: [
                 demo: "PROFILE_HIS_API_HIS_DEMO",
                 test: "PROFILE_HIS_API_HIS_TEST"
@@ -28,7 +28,7 @@ return [
             ]
         ],
         Api_Interoperabilidad: [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/API_HIS_APP",
+            REPO_PATH: "${env.REPO_PATH}/API_Hologen/API_HIS_APP",
             CREDENCIALES: [
                 demo: "PROFILE_HIS_API_HIS_APP_DEMO",
                 test: "PROFILE_HIS_API_HIS_APP_TEST"
