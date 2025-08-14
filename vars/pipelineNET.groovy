@@ -32,12 +32,14 @@ def call(Map config) {
                             BRANCH: configCompleto.AMBIENTES[config.AMBIENTE].BRANCH,
                             CS_PROJ_PATH: configCompleto.APIS[config.API_NAME].REPO_PATH,
                             CREDENTIALS_ID: configCompleto.APIS[config.API_NAME].CREDENCIALES[config.AMBIENTE]
+                            URL: configCompleto.APIS[config.API_NAME].URL[config.AMBIENTE]
                         ]
 
                         echo "Configuración cargada para API ${config.API_NAME} en ambiente ${config.AMBIENTE}:"
                         echo "Ruta csproj: ${apiConfig.CS_PROJ_PATH}"
                         echo "Credenciales: ${apiConfig.CREDENTIALS_ID}"
                         echo "Rama: ${apiConfig.BRANCH}"
+                        echo "URL: ${apiConfig.URL}"
                     }
                 }
             }
