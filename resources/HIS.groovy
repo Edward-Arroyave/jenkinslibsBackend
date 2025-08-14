@@ -18,7 +18,7 @@ return [
                 test: "PROFILE_HIS_API_HIS_TEST"
             ]
         ],
-        Schedule.Api: [
+        "Schedule.Api": [
             REPO_PATH: "${env.REPO_PATH}/API_HIS/Schedule.Api",
             CREDENCIALES: [
                 demo: "PROFILE_HIS_Schedule.Api_DEMO",
