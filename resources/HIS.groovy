@@ -6,7 +6,7 @@ return [
 
     APIS: [
         API_CRTZ_WEB: [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/API_HIS",
+            REPO_PATH: "${env.REPO_PATH}/API_HIS/API_CRTZ_WEB",
             CREDENCIALES: [
                 demo: "",
                 test: "PROFILE_HIS_API_CRTZ_WEB_TEST"
