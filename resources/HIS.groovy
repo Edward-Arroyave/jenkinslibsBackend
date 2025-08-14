@@ -8,11 +8,11 @@ return [
         API_CRTZ_WEB: [
             REPO_PATH: "${env.REPO_PATH}/API_HIS/API_HIS",
             CREDENCIALES: [
-                demo: "CredencialesDemoApi1",
-                test: "PROFILE_HIS_API_HIS_TEST"
+                demo: "",
+                test: "PROFILE_HIS_API_CRTZ_WEB_TEST"
             ],
             URL: [
-                demo: "https://his-backend-annar-demo.azurewebsites.net",
+                demo: "",
                 test: "https://his-backend-caracterizacion-annar-pruebas.azurewebsites.net"
             ]
         ],
