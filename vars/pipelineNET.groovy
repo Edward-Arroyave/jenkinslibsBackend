@@ -119,7 +119,8 @@ def call(Map config) {
                 ])
             }
             cleanWs()
-            }
         }
     }
 }
+    
+
