@@ -27,6 +27,17 @@ return [
                 test: "https://his-backend-annar-pruebas.azurewebsites.net"
             ]
         ],
+        API_HIS_APP: [
+            REPO_PATH: "${env.REPO_PATH}/API_HIS/API_HIS",
+            CREDENCIALES: [
+                demo: "PROFILE_HIS_API_HIS_APP_DEMO",
+                test: "PROFILE_HIS_API_HIS_APP_TEST"
+            ],
+            URL: [
+                demo: "https://his-backend-app-annar-demo-d7dfdve9c0bzc8fy.eastus2-01.azurewebsites.net",
+                test: "https://his-backend-app-annar-pruebas-agejhqeqagebf2as.eastus2-01.azurewebsites.net"
+            ]
+        ],
         "Schedule.Api": [
             REPO_PATH: "${env.REPO_PATH}/API_HIS/Schedule.Api",
             CREDENCIALES: [
