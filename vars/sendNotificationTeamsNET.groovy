@@ -43,6 +43,7 @@ def call(Map config) {
                 [name: "Commit Message", template: "${env.COMMIT_MESSAGE}"],
                 [name: "Commit Hash", template: "${env.COMMIT_HASH}"],
                 [name: "Duration", template: durationText],
+                [name: "APIS", template: "${config.mensaje}"],
             ]
         )
     }
