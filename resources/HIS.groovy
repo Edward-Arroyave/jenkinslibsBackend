@@ -38,6 +38,17 @@ return [
                 test: "https://his-backend-app-annar-pruebas-agejhqeqagebf2as.eastus2-01.azurewebsites.net"
             ]
         ],
+        ApiElectronicInvoice: [
+            REPO_PATH: "${env.REPO_PATH}/API_HIS/ApiElectronicInvoice",
+            CREDENCIALES: [
+                demo: "PROFILE_HIS_ApiElectronicInvoice_DEMO",
+                test: ""
+            ],
+            URL: [
+                demo: "https://his-backend-electronici-demo-f4epgjasdmcbaya9.eastus2-01.azurewebsites.net",
+                test: ""
+            ]
+        ],
         "Schedule.Api": [
             REPO_PATH: "${env.REPO_PATH}/API_HIS/Schedule.Api",
             CREDENCIALES: [
