@@ -60,7 +60,7 @@ return [
                 test: "https://agendamiento-api-his-co-pruebas-btc6csgbezbxgqep.eastus2-01.azurewebsites.net"
             ]
         ],
-        Api_Interoperabilidad: [
+        ApiInteroperability: [
             REPO_PATH: "${env.REPO_PATH}/API_HIS/ApiInteroperability",
             CREDENCIALES: [
                 demo: "PROFILE_HIS_ApiInteroperability_DEMO",
