@@ -22,64 +22,37 @@ def call(Map config) {
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
         }
 
-        stages {
-            stage('Load Config & Clone Repo') {
-                steps {
-                    script {
-                        echo "🔄 Cargando configuración..."
-                        def contenido = libraryResource "${config.PRODUCT}.groovy"
-                        def configCompleto = evaluate(contenido)
-                        def branch = configCompleto.AMBIENTES[config.AMBIENTE].BRANCH
-                        echo "🌿 Rama a usar para el despliegue: ${branch}"
-                        cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
-                        // Guardar configuración para etapas posteriores
-                        env.CONFIG_COMPLETO = configCompleto
-                    }
-                }
-            }
-
-            // Crear un stage por API
+      stages {
+    stage('Load Config & Clone Repo') {
+        steps {
             script {
+                // carga de configuración
+            }
+        }
+    }
+
+    stage('Build & Publish APIs') {
+        steps {
+            script {
+                def apis = config.API_NAME
+                if (apis instanceof String) {
+                    apis = apis.split(',').collect { it.trim() }
+                }
+
                 apis.each { api ->
-                    stage("Build ${api}") {
+                    stage("Build ${api}") {  // <- stage dinámico no permitido aquí
                         steps {
-                            script {
-                                echo "🛠️ Compilando API: ${api}"
-                                def apiConfig = env.CONFIG_COMPLETO.APIS[api]
-                                dir("${apiConfig.CS_PROJ_PATH}") {
-                                    bat """
-                                        dotnet build ${api}.csproj ^
-                                            /p:Configuration=${env.CONFIGURATION} ^
-                                            /p:Platform="Any CPU"
-                                    """
-                                }
+                            dir("${env.CONFIG_COMPLETO.APIS[api].CS_PROJ_PATH}") {
+                                bat "dotnet build ${api}.csproj ..."
                             }
                         }
                     }
 
                     stage("Publish ${api}") {
                         steps {
-                            script {
-                                echo "📦 Publicando API: ${api}"
-                                def apiConfig = env.CONFIG_COMPLETO.APIS[api]
-
-                                dir("${apiConfig.CS_PROJ_PATH}") {
-                                    withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                        bat """
-                                            if not exist "%PUBLISH_SETTINGS%" (
-                                                echo ❌ ERROR: El archivo de credenciales no existe: %PUBLISH_SETTINGS%
-                                                exit /b 1
-                                            )
-                                            set TEMP_PUBLISH_PROFILE=%WORKSPACE%\\publish_profile.pubxml
-                                            copy "%PUBLISH_SETTINGS%" "%TEMP_PUBLISH_PROFILE%"
-                                            dotnet msbuild ${api}.csproj ^
-                                                /p:DeployOnBuild=true ^
-                                                /p:PublishProfile="%TEMP_PUBLISH_PROFILE%" ^
-                                                /p:Configuration=${env.CONFIGURATION} ^
-                                                /p:Platform="Any CPU"
-                                            if exist "%TEMP_PUBLISH_PROFILE%" del "%TEMP_PUBLISH_PROFILE%"
-                                        """
-                                    }
+                            dir("${env.CONFIG_COMPLETO.APIS[api].CS_PROJ_PATH}") {
+                                withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                                    bat "dotnet msbuild ..."
                                 }
                             }
                         }
@@ -87,6 +60,9 @@ def call(Map config) {
                 }
             }
         }
+    }
+}
+
 
         post {
             always {
