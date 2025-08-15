@@ -11,7 +11,7 @@ def call(Map config) {
 
     pipeline {
         agent {
-            label 'Windws-node'
+            label 'Windows-node'
         }
 
         environment {
@@ -37,7 +37,6 @@ def call(Map config) {
                             cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
                         }
 
-                        // Guardamos configCompleto en variable local para usar después
                         return configCompleto
                     }
                 }
@@ -63,30 +62,30 @@ def call(Map config) {
 
                                 stage("Restore ${api}") {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
-                                        sh "dotnet restore ${api}.csproj"
+                                        bat "dotnet restore ${api}.csproj"
                                     }
                                 }
 
                                 stage("Build ${api}") {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
-                                        sh "dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore"
+                                        bat "dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore"
                                     }
                                 }
 
                                 stage("Publish ${api}") {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                            sh """
-                                                TEMP_PUBLISH_PROFILE=\$(mktemp)
-                                                cp "\$PUBLISH_SETTINGS" "\$TEMP_PUBLISH_PROFILE"
+                                            bat """
+                                                set TEMP_PUBLISH_PROFILE=%TEMP%\\publish_profile.pubxml
+                                                copy "%PUBLISH_SETTINGS%" "%TEMP_PUBLISH_PROFILE%"
 
-                                                dotnet msbuild ${api}.csproj \
-                                                    /p:DeployOnBuild=true \
-                                                    /p:PublishProfile="\$TEMP_PUBLISH_PROFILE" \
-                                                    /p:Configuration=${env.CONFIGURATION} \
+                                                dotnet msbuild ${api}.csproj ^
+                                                    /p:DeployOnBuild=true ^
+                                                    /p:PublishProfile="%TEMP_PUBLISH_PROFILE%" ^
+                                                    /p:Configuration=${env.CONFIGURATION} ^
                                                     /p:Platform="Any CPU"
 
-                                                rm -f "\$TEMP_PUBLISH_PROFILE"
+                                                del "%TEMP_PUBLISH_PROFILE%"
                                             """
                                         }
                                     }
@@ -111,7 +110,6 @@ def call(Map config) {
                     if (apisExitosas) { APIS_SUCCESSFUL += "✅ ${apisExitosas.join(', ')}\n" }
                     if (apisFallidas) { APIS_FAILURE    += "❌ ${apisFallidas.join(', ')}" }
 
-                    // Llamada correcta
                     sendNotificationTeamsNET([
                         APIS_SUCCESSFUL: APIS_SUCCESSFUL,
                         APIS_FAILURE: APIS_FAILURE
@@ -123,5 +121,3 @@ def call(Map config) {
         }
     }
 }
-    
-
