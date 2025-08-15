@@ -42,64 +42,30 @@ def call(Map config) {
                 }
             }
 
-            stage('Deploy APIs') {
-                steps {
-                    script {
-                        def configCompleto = evaluate(libraryResource("${config.PRODUCT}.groovy"))
+            stage("Publish ${api}") {
+                dir("${apiConfig.CS_PROJ_PATH}") {
+                    withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                    bat """
+                        if not exist "%PUBLISH_SETTINGS%" (
+                            echo ❌ ERROR: El archivo de credenciales no existe: %PUBLISH_SETTINGS%
+                            exit /b 1
+                        )
 
-                        for (api in apis) {
-                            echo "=== Desplegando API: ${api} ==="
-                            try {
-                                def apiConfig = [
-                                    CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
-                                    CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
-                                    URL: configCompleto.APIS[api].URL[config.AMBIENTE]
-                                ]
+                        set TEMP_PUBLISH_PROFILE=%WORKSPACE%\\publish_profile.pubxml
+                        copy "%PUBLISH_SETTINGS%" "%TEMP_PUBLISH_PROFILE%"
 
-                                echo "Ruta proyecto: ${apiConfig.CS_PROJ_PATH}"
-                                echo "Credenciales usadas: ${apiConfig.CREDENTIALS_ID}"
-                                echo "URL de despliegue: ${apiConfig.URL}"
+                        dotnet msbuild ${api}.csproj ^
+                            /p:DeployOnBuild=true ^
+                            /p:PublishProfile="%TEMP_PUBLISH_PROFILE%" ^
+                            /p:Configuration=${env.CONFIGURATION} ^
+                            /p:Platform="Any CPU"
 
-                                stage("Restore ${api}") {
-                                    dir("${apiConfig.CS_PROJ_PATH}") {
-                                        bat "dotnet restore ${api}.csproj"
-                                    }
-                                }
-
-                                stage("Build ${api}") {
-                                    dir("${apiConfig.CS_PROJ_PATH}") {
-                                        bat "dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore"
-                                    }
-                                }
-
-                                stage("Publish ${api}") {
-                                    dir("${apiConfig.CS_PROJ_PATH}") {
-                                        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                            bat """
-                                                set TEMP_PUBLISH_PROFILE=%TEMP%\\publish_profile.pubxml
-                                                copy "%PUBLISH_SETTINGS%" "%TEMP_PUBLISH_PROFILE%"
-
-                                                dotnet msbuild ${api}.csproj ^
-                                                    /p:DeployOnBuild=true ^
-                                                    /p:PublishProfile="%TEMP_PUBLISH_PROFILE%" ^
-                                                    /p:Configuration=${env.CONFIGURATION} ^
-                                                    /p:Platform="Any CPU"
-
-                                                del "%TEMP_PUBLISH_PROFILE%"
-                                            """
-                                        }
-                                    }
-                                }
-
-                                apisExitosas << api
-                            } catch (err) {
-                                echo "❌ Error en ${api}: ${err}"
-                                apisFallidas << api
-                            }
-                        }
+                        if exist "%TEMP_PUBLISH_PROFILE%" del "%TEMP_PUBLISH_PROFILE%"
+                    """
                     }
                 }
             }
+
         }
 
         post {
