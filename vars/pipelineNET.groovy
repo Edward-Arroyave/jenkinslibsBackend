@@ -76,16 +76,7 @@ def call(Map config) {
                             stage("Publish ${api}") {
                                 dir("${apiConfig.CS_PROJ_PATH}") {
                                     withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                        bat """
-                                            :: Verificamos que la variable exista
-                                            if not exist "%PUBLISH_SETTINGS%" (
-                                                echo ❌ La variable PUBLISH_SETTINGS no tiene el archivo inyectado
-                                                exit /b 1
-                                            ) else (
-                                                echo ✅ Archivo de publicación listo: %PUBLISH_SETTINGS%
-                                            )
-
-                                            :: Ejecutamos dotnet msbuild directamente con el archivo inyectado
+                                        bat """   
                                             dotnet msbuild ${api}.csproj ^
                                                 /p:DeployOnBuild=true ^
                                                 /p:PublishProfile="%PUBLISH_SETTINGS%" ^
