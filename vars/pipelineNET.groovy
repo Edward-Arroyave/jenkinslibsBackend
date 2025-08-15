@@ -77,15 +77,30 @@ def call(Map config) {
                                 dir("${apiConfig.CS_PROJ_PATH}") {
                                     withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                         bat """
-                                            set TEMP_PUBLISH_PROFILE=%TEMP%\\temp_pubxml.pubxml
-                                            copy "%PUBLISH_SETTINGS%" "%TEMP_PUBLISH_PROFILE%"
+                                            :: Aseguramos que la carpeta temporal exista
+                                            if not exist "%TEMP%" mkdir "%TEMP%"
 
+                                            set TEMP_PUBLISH_PROFILE=%TEMP%\\temp_pubxml.pubxml
+
+                                            :: Copiamos el PublishSettings
+                                            copy /Y "%PUBLISH_SETTINGS%" "%TEMP_PUBLISH_PROFILE%"
+
+                                            :: Verificamos que el archivo exista
+                                            if not exist "%TEMP_PUBLISH_PROFILE%" (
+                                                echo ❌ No se pudo copiar el PublishSettings
+                                                exit /b 1
+                                            ) else (
+                                                echo ✅ Archivo de publicación listo: %TEMP_PUBLISH_PROFILE%
+                                            )
+
+                                            :: Ejecutamos dotnet msbuild
                                             dotnet msbuild ${api}.csproj ^
                                                 /p:DeployOnBuild=true ^
                                                 /p:PublishProfile="%TEMP_PUBLISH_PROFILE%" ^
                                                 /p:Configuration=${env.CONFIGURATION} ^
                                                 /p:Platform="Any CPU"
 
+                                            :: Limpiamos el archivo temporal
                                             del /Q "%TEMP_PUBLISH_PROFILE%"
                                         """
                                     }
