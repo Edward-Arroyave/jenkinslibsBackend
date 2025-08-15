@@ -61,36 +61,37 @@ def call(Map config) {
                                 echo "Credenciales usadas: ${apiConfig.CREDENTIALS_ID}"
                                 echo "URL de despliegue: ${apiConfig.URL}"
 
-                                stage("Restore ${api}") {
-                                    dir("${apiConfig.CS_PROJ_PATH}") {
-                                        sh "dotnet restore ${api}.csproj"
+                            stage("Restore ${api}") {
+                                dir("${apiConfig.CS_PROJ_PATH}") {
+                                    bat "dotnet restore ${api}.csproj"
+                                }
+                            }
+
+                            stage("Build ${api}") {
+                                dir("${apiConfig.CS_PROJ_PATH}") {
+                                    bat "dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore"
+                                }
+                            }
+
+                            stage("Publish ${api}") {
+                                dir("${apiConfig.CS_PROJ_PATH}") {
+                                    withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                                        bat """
+                                            set TEMP_PUBLISH_PROFILE=%TEMP%\\temp_pubxml.pubxml
+                                            copy "%PUBLISH_SETTINGS%" "%TEMP_PUBLISH_PROFILE%"
+
+                                            dotnet msbuild ${api}.csproj ^
+                                                /p:DeployOnBuild=true ^
+                                                /p:PublishProfile="%TEMP_PUBLISH_PROFILE%" ^
+                                                /p:Configuration=${env.CONFIGURATION} ^
+                                                /p:Platform="Any CPU"
+
+                                            del /Q "%TEMP_PUBLISH_PROFILE%"
+                                        """
                                     }
                                 }
+                            }
 
-                                stage("Build ${api}") {
-                                    dir("${apiConfig.CS_PROJ_PATH}") {
-                                        sh "dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore"
-                                    }
-                                }
-
-                                stage("Publish ${api}") {
-                                    dir("${apiConfig.CS_PROJ_PATH}") {
-                                        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                            sh """
-                                                TEMP_PUBLISH_PROFILE=\$(mktemp)
-                                                cp "\$PUBLISH_SETTINGS" "\$TEMP_PUBLISH_PROFILE"
-
-                                                dotnet msbuild ${api}.csproj \
-                                                    /p:DeployOnBuild=true \
-                                                    /p:PublishProfile="\$TEMP_PUBLISH_PROFILE" \
-                                                    /p:Configuration=${env.CONFIGURATION} \
-                                                    /p:Platform="Any CPU"
-
-                                                rm -f "\$TEMP_PUBLISH_PROFILE"
-                                            """
-                                        }
-                                    }
-                                }
 
                                 apisExitosas << api
                             } catch (err) {
