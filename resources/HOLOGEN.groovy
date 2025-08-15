@@ -28,7 +28,7 @@ return [
             ]
         ],
         Api_Interoperabilidad: [
-            REPO_PATH: "${env.REPO_PATH}/API_Hologen/API_HIS_APP",
+            REPO_PATH: "${env.REPO_PATH}/API_HIS/ApiInteroperability",
             CREDENCIALES: [
                 demo: "PROFILE_HIS_API_HIS_APP_DEMO",
                 test: "PROFILE_HIS_API_HIS_APP_TEST"
