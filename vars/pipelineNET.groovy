@@ -77,33 +77,25 @@ def call(Map config) {
                                 dir("${apiConfig.CS_PROJ_PATH}") {
                                     withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                         bat """
-                                            :: Usamos carpeta temporal dentro del workspace
-                                            set TEMP_PUBLISH_PROFILE=%WORKSPACE%\\temp_pubxml.pubxml
-
-                                            :: Copiamos el PublishSettings
-                                            copy /Y "%PUBLISH_SETTINGS%" "%TEMP_PUBLISH_PROFILE%"
-
-                                            :: Verificamos que el archivo exista
-                                            if not exist "%TEMP_PUBLISH_PROFILE%" (
-                                                echo ❌ No se pudo copiar el PublishSettings
+                                            :: Verificamos que la variable exista
+                                            if not exist "%PUBLISH_SETTINGS%" (
+                                                echo ❌ La variable PUBLISH_SETTINGS no tiene el archivo inyectado
                                                 exit /b 1
                                             ) else (
-                                                echo ✅ Archivo de publicación listo: %TEMP_PUBLISH_PROFILE%
+                                                echo ✅ Archivo de publicación listo: %PUBLISH_SETTINGS%
                                             )
 
-                                            :: Ejecutamos dotnet msbuild
+                                            :: Ejecutamos dotnet msbuild directamente con el archivo inyectado
                                             dotnet msbuild ${api}.csproj ^
                                                 /p:DeployOnBuild=true ^
-                                                /p:PublishProfile="%TEMP_PUBLISH_PROFILE%" ^
+                                                /p:PublishProfile="%PUBLISH_SETTINGS%" ^
                                                 /p:Configuration=${env.CONFIGURATION} ^
                                                 /p:Platform="Any CPU"
-
-                                            :: Limpiamos el archivo temporal
-                                            del /Q "%TEMP_PUBLISH_PROFILE%"
                                         """
                                     }
                                 }
                             }
+
 
 
                                 apisExitosas << api
