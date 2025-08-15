@@ -76,17 +76,18 @@ def call(Map config) {
                             stage("Publish ${api}") {
                                 dir("${apiConfig.CS_PROJ_PATH}") {
                                     withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                        bat """   
+                                        bat """
                                             dotnet msbuild ${api}.csproj ^
                                                 /p:DeployOnBuild=true ^
-                                                /p:PublishProfile="%${PUBLISH_SETTINGS}%" ^
+                                                /p:WebPublishMethod=MSDeploy ^
+                                                /p:PublishSettingsFile="%PUBLISH_SETTINGS%" ^
                                                 /p:Configuration=${env.CONFIGURATION} ^
-                                                /p:Platform="Any CPU"
+                                                /p:Platform="Any CPU" ^
+                                                /p:AllowUntrustedCertificate=true
                                         """
                                     }
                                 }
                             }
-
 
 
                                 apisExitosas << api
