@@ -1,18 +1,3 @@
-/**
- * Pipeline step para clonar un repositorio Git de forma superficial (shallow clone).
- *
- * @param config Map con configuración requerida:
- *   - branch (String): Rama del repositorio que se va a clonar.
- *   - repoPath (String): Ruta local donde se clonará el repositorio.
- *   - repoUrl (String): URL del repositorio Git.
- *
- * Requisitos:
- *   - Credenciales con ID 'GITHUB' configuradas en Jenkins para acceso al repositorio.
- *
- * Características:
- *   - Clonación superficial con profundidad 1 para acelerar el proceso.
- *   - No clona submódulos.
- */
 def call(Map config) {
 
     // Validar que los parámetros obligatorios estén presentes
@@ -41,19 +26,16 @@ def call(Map config) {
             ]]
         ])
 
-
-        sh "git config --global --add safe.directory ${config.repoPath}"
+        bat "git config --global --add safe.directory ${config.repoPath}"
         
-        def lastCommit = sh(script: "git log -1 --pretty='%H|%an|%s'", returnStdout: true).trim()
+        def lastCommit = bat(script: 'git log -1 --pretty="%H|%an|%s"', returnStdout: true).trim()
+        lastCommit = lastCommit.replaceAll("\r","") // limpiar retornos de carro de Windows
         def (hash, author, message) = lastCommit.split("\\|")
         env.COMMIT_HASH = hash
         env.COMMIT_AUTHOR = author
         env.COMMIT_MESSAGE = message
 
         echo "🔍 Último commit: ${env.COMMIT_HASH} por ${env.COMMIT_AUTHOR} - ${env.COMMIT_MESSAGE}"
-
-
-
     }
 
     // Confirmación de éxito
