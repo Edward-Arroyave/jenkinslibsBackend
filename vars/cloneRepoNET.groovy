@@ -26,10 +26,16 @@ def call(Map config) {
             ]]
         ])
 
-        bat "git config --global --add safe.directory ${config.repoPath}"
+        // Configurar safe.directory
+        bat "git config --global --add safe.directory \"${config.repoPath}\""
         
-        def lastCommit = bat(script: 'git log -1 --pretty="%H|%an|%s"', returnStdout: true).trim()
+        // Obtener último commit correctamente en Windows
+        def lastCommit = bat(
+            script: 'git log -1 --pretty=^"%H^|%an^|%s^%"',
+            returnStdout: true
+        ).trim()
         lastCommit = lastCommit.replaceAll("\r","") // limpiar retornos de carro de Windows
+
         def (hash, author, message) = lastCommit.split("\\|")
         env.COMMIT_HASH = hash
         env.COMMIT_AUTHOR = author
