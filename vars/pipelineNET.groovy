@@ -20,73 +20,84 @@ def call(Map config) {
             REPO_URL = "${config.REPO_URL}"
             CONFIGURATION = 'Release'
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
-            PUBLISH_OUTPUT_DIR = "${BUILD_FOLDER}/publish"
         }
 
         stages {
-            stage('Preparar entorno') {
+            stage('Load Config & Clone Repo') {
                 steps {
                     script {
-                        // Clonar repositorio si es necesario
-                        bat "mkdir \"${PUBLISH_OUTPUT_DIR}\""
+                        echo "🔄 Cargando configuración..."
+                        def contenido = libraryResource "${config.PRODUCT}.groovy"
+                        def configCompleto = evaluate(contenido)
+
+                        def branch = configCompleto.AMBIENTES[config.AMBIENTE].BRANCH
+                        echo "🌿 Rama a usar para el despliegue: ${branch}"
+
+                        stage("Clone Repository ${branch}") {
+                            cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
+                        }
+
+                        // Guardamos configCompleto en variable local para usar después
+                        return configCompleto
                     }
                 }
             }
 
-            stage('Procesar APIs') {
+            stage('Deploy APIs') {
                 steps {
                     script {
-                        apis.each { apiName ->
-                            try {
-                                // Obtener configuración específica de la API
-                                def apiConfig = env.CONFIG_COMPLETO.APIS[apiName]
-                                
-                                // Stage de Build
-                                echo "Building ${apiName}..."
-                                dir(apiConfig.CS_PROJ_PATH) {
-                                    bat """
-                                        dotnet clean "${apiName}.csproj" -c ${CONFIGURATION}
-                                        dotnet build "${apiName}.csproj" -c ${CONFIGURATION} --no-restore
-                                    """
-                                }
+                        def configCompleto = evaluate(libraryResource("${config.PRODUCT}.groovy"))
 
-                                // Stage de Publish
-                                echo "Publishing ${apiName}..."
-                                dir(apiConfig.CS_PROJ_PATH) {
-                                    withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_PROFILE')]) {
-                                        bat """
-                                            dotnet publish "${apiName}.csproj" \
-                                            -c ${CONFIGURATION} \
-                                            --no-build \
-                                            -p:PublishProfile=${PUBLISH_PROFILE} \
-                                            -p:DeployOnBuild=true \
-                                            -p:WebPublishMethod=FileSystem \
-                                            -p:DeleteExistingFiles=true \
-                                            -p:publishUrl=${PUBLISH_OUTPUT_DIR}/${apiName}
-                                        """
+                        for (api in apis) {
+                            echo "=== Desplegando API: ${api} ==="
+                            try {
+                                def apiConfig = [
+                                    CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
+                                    CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
+                                    URL: configCompleto.APIS[api].URL[config.AMBIENTE]
+                                ]
+
+                                echo "Ruta proyecto: ${apiConfig.CS_PROJ_PATH}"
+                                echo "Credenciales usadas: ${apiConfig.CREDENTIALS_ID}"
+                                echo "URL de despliegue: ${apiConfig.URL}"
+
+                                stage("Restore ${api}") {
+                                    dir("${apiConfig.CS_PROJ_PATH}") {
+                                        sh "dotnet restore ${api}.csproj"
                                     }
                                 }
-                                apisExitosas << apiName
-                            } catch (Exception e) {
-                                apisFallidas << apiName
-                                echo "Error procesando ${apiName}: ${e.toString()}"
-                                // Continúa con las siguientes APIs
+
+                                stage("Build ${api}") {
+                                    dir("${apiConfig.CS_PROJ_PATH}") {
+                                        sh "dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore"
+                                    }
+                                }
+
+                                stage("Publish ${api}") {
+                                    dir("${apiConfig.CS_PROJ_PATH}") {
+                                        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                                            sh """
+                                                TEMP_PUBLISH_PROFILE=\$(mktemp)
+                                                cp "\$PUBLISH_SETTINGS" "\$TEMP_PUBLISH_PROFILE"
+
+                                                dotnet msbuild ${api}.csproj \
+                                                    /p:DeployOnBuild=true \
+                                                    /p:PublishProfile="\$TEMP_PUBLISH_PROFILE" \
+                                                    /p:Configuration=${env.CONFIGURATION} \
+                                                    /p:Platform="Any CPU"
+
+                                                rm -f "\$TEMP_PUBLISH_PROFILE"
+                                            """
+                                        }
+                                    }
+                                }
+
+                                apisExitosas << api
+                            } catch (err) {
+                                echo "❌ Error en ${api}: ${err}"
+                                apisFallidas << api
                             }
                         }
-                    }
-                }
-            }
-
-            stage('Despliegue') {
-                when {
-                    expression { apisExitosas.size() > 0 }
-                }
-                steps {
-                    script {
-                        // Aquí iría la lógica para copiar los archivos publicados al servidor destino
-                        // Por ejemplo:
-                        // bat "xcopy \"${PUBLISH_OUTPUT_DIR}\\*\" \"\\\\server\\share\\\" /E /Y /I"
-                        echo "Archivos listos en ${PUBLISH_OUTPUT_DIR}"
                     }
                 }
             }
@@ -95,27 +106,22 @@ def call(Map config) {
         post {
             always {
                 script {
-                    cleanWs()
-                }
-            }
-            success {
-                script {
-                    if (apisExitosas) {
-                        sendNotificationTeamsNET([
-                            APIS_SUCCESSFUL: "✅ ${apisExitosas.join(', ')}",
-                            APIS_FAILURE: apisFallidas ? "❌ ${apisFallidas.join(', ')}" : "N/A"
-                        ])
-                    }
-                }
-            }
-            failure {
-                script {
+                    def APIS_FAILURE = ""
+                    def APIS_SUCCESSFUL = ""
+                    if (apisExitosas) { APIS_SUCCESSFUL += "✅ ${apisExitosas.join(', ')}\n" }
+                    if (apisFallidas) { APIS_FAILURE    += "❌ ${apisFallidas.join(', ')}" }
+
+                    // Llamada correcta
                     sendNotificationTeamsNET([
-                        APIS_SUCCESSFUL: apisExitosas ? "✅ ${apisExitosas.join(', ')}" : "N/A",
-                        APIS_FAILURE: "❌ ${apisFallidas.join(', ')}"
+                        APIS_SUCCESSFUL: APIS_SUCCESSFUL,
+                        APIS_FAILURE: APIS_FAILURE
                     ])
                 }
+
+                cleanWs()
             }
         }
     }
 }
+    
+
