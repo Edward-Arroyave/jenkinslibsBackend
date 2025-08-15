@@ -34,7 +34,7 @@ def call(Map config) {
     stage('Build & Publish APIs') {
         steps {
             script {
-                def apis = config.API_NAME
+                apis = config.API_NAME
                 if (apis instanceof String) {
                     apis = apis.split(',').collect { it.trim() }
                 }
