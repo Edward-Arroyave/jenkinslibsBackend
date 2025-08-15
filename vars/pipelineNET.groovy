@@ -11,11 +11,7 @@ def call(Map config) {
 
     pipeline {
         agent {
-            docker {
-                image config.DOCKER_IMAGE
-                args '-u root:root'
-                label 'docker-node'
-            }
+            label 'Windws-node'
         }
 
         environment {
