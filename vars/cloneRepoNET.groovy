@@ -1,5 +1,4 @@
 def call(Map config) {
-
     if (!config.branch || !config.repoPath || !config.repoUrl) {
         error("❌ cloneRepo: 'branch', 'repoPath', and 'repoUrl' parameters are required.")
     }
@@ -24,11 +23,11 @@ def call(Map config) {
         ])
 
         // Configurar safe.directory correctamente para Windows
-        bat "git config --global --add safe.directory \"${config.repoPath}\""
+        bat "git config --global --add safe.directory \"${config.repoPath.replace('/', '\\')}\""
 
         // Obtener último commit en Windows CMD de forma segura
         def lastCommit = bat(
-            script: """for /f "tokens=1,2,* delims=%%" %%A in ('git log -1 --pretty=format:"%%H%%|%%an%%|%%s"') do @echo %%A|%%B|%%C""",
+            script: '@for /f "delims=" %%a in (\'git log -1 --pretty^=format:"%%H|%%an|%%s"\') do @echo %%a',
             returnStdout: true
         ).trim()
 
