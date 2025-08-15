@@ -11,7 +11,7 @@ def call(Map config) {
 
     pipeline {
         agent {
-            label 'Windws-node'
+            label 'Windows-node'
         }
 
         environment {
@@ -23,51 +23,63 @@ def call(Map config) {
         }
 
         stages {
-    stage('Load Config & Clone Repo') {
-        steps {
-            script {
-                echo "🔄 Cargando configuración..."
-                def contenido = libraryResource "${config.PRODUCT}.groovy"
-                def configCompleto = evaluate(contenido)
-                def branch = configCompleto.AMBIENTES[config.AMBIENTE].BRANCH
-                echo "🌿 Rama a usar para el despliegue: ${branch}"
-                cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
-                // Save for later stages
-                env.CONFIG_COMPLETO = configCompleto
+            stage('Load Config & Clone Repo') {
+                steps {
+                    script {
+                        echo "🔄 Cargando configuración..."
+                        def contenido = libraryResource "${config.PRODUCT}.groovy"
+                        def configCompleto = evaluate(contenido)
+                        def branch = configCompleto.AMBIENTES[config.AMBIENTE].BRANCH
+                        echo "🌿 Rama a usar para el despliegue: ${branch}"
+                        cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
+                        // Guardar configuración para etapas posteriores
+                        env.CONFIG_COMPLETO = configCompleto
+                    }
+                }
             }
-        }
-    }
 
-        stage('Publish APIs') {
-            steps {
-                script {
-                        def apis = config.API_NAME
-                        if (apis instanceof String) {
-                            apis = apis.split(',').collect { it.trim() }
-                        }
-
-                        echo "APIs seleccionadas para despliegue: ${apis.join(', ')}"
-
-                        apis.each { api ->
-                            echo "📦 Publicando API: ${api}"
-                            def apiConfig = env.CONFIG_COMPLETO.APIS[api]
-
-                            dir("${apiConfig.CS_PROJ_PATH}") {
-                                withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+            // Crear un stage por API
+            script {
+                apis.each { api ->
+                    stage("Build ${api}") {
+                        steps {
+                            script {
+                                echo "🛠️ Compilando API: ${api}"
+                                def apiConfig = env.CONFIG_COMPLETO.APIS[api]
+                                dir("${apiConfig.CS_PROJ_PATH}") {
                                     bat """
-                                        if not exist "%PUBLISH_SETTINGS%" (
-                                            echo ❌ ERROR: El archivo de credenciales no existe: %PUBLISH_SETTINGS%
-                                            exit /b 1
-                                        )
-                                        set TEMP_PUBLISH_PROFILE=%WORKSPACE%\\publish_profile.pubxml
-                                        copy "%PUBLISH_SETTINGS%" "%TEMP_PUBLISH_PROFILE%"
-                                        dotnet msbuild ${api}.csproj ^
-                                            /p:DeployOnBuild=true ^
-                                            /p:PublishProfile="%TEMP_PUBLISH_PROFILE%" ^
+                                        dotnet build ${api}.csproj ^
                                             /p:Configuration=${env.CONFIGURATION} ^
                                             /p:Platform="Any CPU"
-                                        if exist "%TEMP_PUBLISH_PROFILE%" del "%TEMP_PUBLISH_PROFILE%"
                                     """
+                                }
+                            }
+                        }
+                    }
+
+                    stage("Publish ${api}") {
+                        steps {
+                            script {
+                                echo "📦 Publicando API: ${api}"
+                                def apiConfig = env.CONFIG_COMPLETO.APIS[api]
+
+                                dir("${apiConfig.CS_PROJ_PATH}") {
+                                    withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                                        bat """
+                                            if not exist "%PUBLISH_SETTINGS%" (
+                                                echo ❌ ERROR: El archivo de credenciales no existe: %PUBLISH_SETTINGS%
+                                                exit /b 1
+                                            )
+                                            set TEMP_PUBLISH_PROFILE=%WORKSPACE%\\publish_profile.pubxml
+                                            copy "%PUBLISH_SETTINGS%" "%TEMP_PUBLISH_PROFILE%"
+                                            dotnet msbuild ${api}.csproj ^
+                                                /p:DeployOnBuild=true ^
+                                                /p:PublishProfile="%TEMP_PUBLISH_PROFILE%" ^
+                                                /p:Configuration=${env.CONFIGURATION} ^
+                                                /p:Platform="Any CPU"
+                                            if exist "%TEMP_PUBLISH_PROFILE%" del "%TEMP_PUBLISH_PROFILE%"
+                                        """
+                                    }
                                 }
                             }
                         }
