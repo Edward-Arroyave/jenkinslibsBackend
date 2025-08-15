@@ -79,7 +79,7 @@ def call(Map config) {
                                         bat """   
                                             dotnet msbuild ${api}.csproj ^
                                                 /p:DeployOnBuild=true ^
-                                                /p:PublishProfile="%PUBLISH_SETTINGS%" ^
+                                                /p:PublishProfile="%${PUBLISH_SETTINGS}%" ^
                                                 /p:Configuration=${env.CONFIGURATION} ^
                                                 /p:Platform="Any CPU"
                                         """
