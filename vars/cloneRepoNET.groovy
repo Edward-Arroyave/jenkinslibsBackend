@@ -23,17 +23,22 @@ def call(Map config) {
             ]]
         ])
 
-        // safe.directory
+        // Configurar safe.directory correctamente para Windows
         bat "git config --global --add safe.directory \"${config.repoPath}\""
 
-        // Obtener último commit en Windows CMD de manera segura
+        // Obtener último commit en Windows CMD de forma segura
         def lastCommit = bat(
-            script: 'git log -1 --pretty=format:"%H%%%an%%%s"',
+            script: """for /f "tokens=1,2,* delims=%%" %%A in ('git log -1 --pretty=format:"%%H%%|%%an%%|%%s"') do @echo %%A|%%B|%%C""",
             returnStdout: true
         ).trim()
 
-        lastCommit = lastCommit.replaceAll("\r","") // limpiar retornos de carro
-        def (hash, author, message) = lastCommit.split("%%%")
+        // Limpiar retornos de carro y saltos de línea
+        lastCommit = lastCommit.replaceAll("[\\r\\n]+", "")
+        def parts = lastCommit.split("\\|")
+        def hash = parts[0]
+        def author = parts.length > 1 ? parts[1] : ""
+        def message = parts.length > 2 ? parts[2] : ""
+
         env.COMMIT_HASH = hash
         env.COMMIT_AUTHOR = author
         env.COMMIT_MESSAGE = message
