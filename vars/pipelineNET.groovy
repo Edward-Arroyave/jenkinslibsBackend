@@ -77,10 +77,8 @@ def call(Map config) {
                                 dir("${apiConfig.CS_PROJ_PATH}") {
                                     withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                         bat """
-                                            :: Aseguramos que la carpeta temporal exista
-                                            if not exist "%TEMP%" mkdir "%TEMP%"
-
-                                            set TEMP_PUBLISH_PROFILE=%TEMP%\\temp_pubxml.pubxml
+                                            :: Usamos carpeta temporal dentro del workspace
+                                            set TEMP_PUBLISH_PROFILE=%WORKSPACE%\\temp_pubxml.pubxml
 
                                             :: Copiamos el PublishSettings
                                             copy /Y "%PUBLISH_SETTINGS%" "%TEMP_PUBLISH_PROFILE%"
