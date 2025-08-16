@@ -76,18 +76,31 @@ def call(Map config) {
                             stage("Publish ${api}") {
                                 dir("${apiConfig.CS_PROJ_PATH}") {
                                     withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                        bat """
-                                            dotnet msbuild ${api}.csproj ^
-                                                /p:DeployOnBuild=true ^
-                                                /p:WebPublishMethod=MSDeploy ^
-                                                /p:PublishSettingsFile="%PUBLISH_SETTINGS%" ^
-                                                /p:Configuration=${env.CONFIGURATION} ^
-                                                /p:Platform="Any CPU" ^
+                                        // Extraemos valores del .PublishSettings
+                                        powershell """
+                                            [xml]$pub = Get-Content "$env:PUBLISH_SETTINGS"
+                                            $profile = $pub.publishData.publishProfile | Where-Object { $_.publishMethod -eq "MSDeploy" }
+                                            echo "🔑 Usando perfil de publicación: $($profile.profileName)"
+
+                                            $url = $profile.publishUrl
+                                            $site = $profile.msdeploySite
+                                            $user = $profile.userName
+                                            $pass = $profile.userPWD
+
+                                            dotnet msbuild ${api}.csproj `
+                                                /p:DeployOnBuild=true `
+                                                /p:WebPublishMethod=MSDeploy `
+                                                /p:MsDeployServiceUrl="$url" `
+                                                /p:DeployIisAppPath="$site" `
+                                                /p:UserName="$user" `
+                                                /p:Password="$pass" `
+                                                /p:Configuration=${env.CONFIGURATION} `
                                                 /p:AllowUntrustedCertificate=true
                                         """
                                     }
                                 }
                             }
+
 
 
                                 apisExitosas << api
