@@ -61,65 +61,56 @@ def call(Map config) {
                                 echo "Credenciales usadas: ${apiConfig.CREDENTIALS_ID}"
                                 echo "URL de despliegue: ${apiConfig.URL}"
 
-                            stage("Restore ${api}") {
-                                dir("${apiConfig.CS_PROJ_PATH}") {
-                                    bat "dotnet restore ${api}.csproj"
-                                }
-                            }
+                                stage("Deploy ${api}") {
+                                    dir("${apiConfig.CS_PROJ_PATH}") {
+                                        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                                            powershell """ 
+                                                Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
 
-                            stage("Build ${api}") {
-                                dir("${apiConfig.CS_PROJ_PATH}") {
-                                    bat "dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore"
-                                }
-                            }
+                                                # Cargar el archivo de publicación
+                                                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                                                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                             stage("Publish ${api}") {
-                                dir("${apiConfig.CS_PROJ_PATH}") {
-                                    withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                        powershell """ 
-                                            Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
+                                                if (-not \$profile) {
+                                                    Write-Error "❌ No se encontró un perfil con publishMethod=MSDeploy en \$env:PUBLISH_SETTINGS"
+                                                    exit 1
+                                                }
 
-                                            # Cargar el archivo de publicación
-                                            [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                                            \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+                                                Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
 
-                                            if (-not \$profile) {
-                                                Write-Error "❌ No se encontró un perfil con publishMethod=MSDeploy en \$env:PUBLISH_SETTINGS"
-                                                exit 1
-                                            }
+                                                # Variables
+                                                \$url  = \$profile.publishUrl
+                                                \$site = \$profile.msdeploySite
+                                                \$user = \$profile.userName
+                                                \$pass = \$profile.userPWD
 
-                                            Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
+                                                # Get the actual project file name
+                                                \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                                                if (-not \$projectFile) {
+                                                    Write-Error "❌ No se encontró ningún archivo .csproj en el directorio actual"
+                                                    exit 1
+                                                }
 
-                                            # Variables
-                                            \$url  = \$profile.publishUrl
-                                            \$site = \$profile.msdeploySite
-                                            \$user = \$profile.userName
-                                            \$pass = \$profile.userPWD
+                                                Write-Host "🚀 Iniciando despliegue completo (restore, build, publish) del proyecto: \$projectFile"
 
-                                            # Get the actual project file name
-                                            \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
-                                            if (-not \$projectFile) {
-                                                Write-Error "❌ No se encontró ningún archivo .csproj en el directorio actual"
-                                                exit 1
-                                            }
-
-                                            Write-Host "🏗 Publicando proyecto: \$projectFile"
-
-                                            # Ejecutar publicación con MSBuild
-                                            dotnet msbuild "\$projectFile" `
-                                                /p:DeployOnBuild=true `
-                                                /p:WebPublishMethod=MSDeploy `
-                                                /p:MsDeployServiceUrl="\$url" `
-                                                /p:DeployIisAppPath="\$site" `
-                                                /p:UserName="\$user" `
-                                                /p:Password="\$pass" `
-                                                /p:Configuration=${CONFIGURATION} `
-                                                /p:AllowUntrustedCertificate=true
-                                        """
+                                                # Ejecutar todo en un solo comando MSBuild
+                                                dotnet msbuild "\$projectFile" `
+                                                    /p:DeployOnBuild=true `
+                                                    /p:WebPublishMethod=MSDeploy `
+                                                    /p:MsDeployServiceUrl="\$url" `
+                                                    /p:DeployIisAppPath="\$site" `
+                                                    /p:UserName="\$user" `
+                                                    /p:Password="\$pass" `
+                                                    /p:Configuration=${CONFIGURATION} `
+                                                    /p:AllowUntrustedCertificate=true `
+                                                    /p:RestorePackagesConfig=true `
+                                                    /p:RestoreDuringBuild=true `
+                                                    /t:Build `
+                                                    /p:BuildProjectReferences=true
+                                            """
+                                        }
                                     }
                                 }
-                            }
-
 
 
                                 apisExitosas << api
