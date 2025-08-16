@@ -73,10 +73,10 @@ def call(Map config) {
                                 }
                             }
 
-                           stage("Publish ${api}") {
+                             stage("Publish ${api}") {
                                 dir("${apiConfig.CS_PROJ_PATH}") {
                                     withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                        powershell """
+                                        powershell ''' 
                                             Write-Host "📄 Leyendo perfil de publicación desde: $env:PUBLISH_SETTINGS"
 
                                             # Cargar el archivo de publicación
@@ -104,9 +104,9 @@ def call(Map config) {
                                                 /p:DeployIisAppPath="$site" `
                                                 /p:UserName="$user" `
                                                 /p:Password="$pass" `
-                                                /p:Configuration=${env.CONFIGURATION} `
+                                                /p:Configuration=${CONFIGURATION} `
                                                 /p:AllowUntrustedCertificate=true
-                                        """
+                                        '''
                                     }
                                 }
                             }
