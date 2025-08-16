@@ -76,41 +76,49 @@ def call(Map config) {
                              stage("Publish ${api}") {
                                 dir("${apiConfig.CS_PROJ_PATH}") {
                                     withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                        powershell ''' 
-                                            Write-Host "📄 Leyendo perfil de publicación desde: $env:PUBLISH_SETTINGS"
+                                        powershell """ 
+                                            Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
 
                                             # Cargar el archivo de publicación
-                                            [xml]$pub = Get-Content "$env:PUBLISH_SETTINGS"
-                                            $profile = $pub.publishData.publishProfile | Where-Object { $_.publishMethod -eq "MSDeploy" }
+                                            [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                                            \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                                            if (-not $profile) {
-                                                Write-Error "❌ No se encontró un perfil con publishMethod=MSDeploy en $env:PUBLISH_SETTINGS"
+                                            if (-not \$profile) {
+                                                Write-Error "❌ No se encontró un perfil con publishMethod=MSDeploy en \$env:PUBLISH_SETTINGS"
                                                 exit 1
                                             }
 
-                                            Write-Host "🔑 Usando perfil: $($profile.profileName)"
+                                            Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
 
                                             # Variables
-                                            $url  = $profile.publishUrl
-                                            $site = $profile.msdeploySite
-                                            $user = $profile.userName
-                                            $pass = $profile.userPWD
+                                            \$url  = \$profile.publishUrl
+                                            \$site = \$profile.msdeploySite
+                                            \$user = \$profile.userName
+                                            \$pass = \$profile.userPWD
+
+                                            # Get the actual project file name
+                                            \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                                            if (-not \$projectFile) {
+                                                Write-Error "❌ No se encontró ningún archivo .csproj en el directorio actual"
+                                                exit 1
+                                            }
+
+                                            Write-Host "🏗 Publicando proyecto: \$projectFile"
 
                                             # Ejecutar publicación con MSBuild
-                                            dotnet msbuild "${api}.csproj" `
+                                            dotnet msbuild "\$projectFile" `
                                                 /p:DeployOnBuild=true `
                                                 /p:WebPublishMethod=MSDeploy `
-                                                /p:MsDeployServiceUrl="$url" `
-                                                /p:DeployIisAppPath="$site" `
-                                                /p:UserName="$user" `
-                                                /p:Password="$pass" `
+                                                /p:MsDeployServiceUrl="\$url" `
+                                                /p:DeployIisAppPath="\$site" `
+                                                /p:UserName="\$user" `
+                                                /p:Password="\$pass" `
                                                 /p:Configuration=${CONFIGURATION} `
                                                 /p:AllowUntrustedCertificate=true
-                                        '''
+                                        """
                                     }
                                 }
                             }
-
 
 
 
