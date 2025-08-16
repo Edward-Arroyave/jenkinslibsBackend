@@ -20,7 +20,7 @@ return [
             REPO_PATH: "${env.REPO_PATH}/API_HIS/API_HIS",
             CREDENCIALES: [
                 demo: "PROFILE_HIS_API_HIS_DEMO",
-                test: "PROFILE_HIS_API_CRTZ_WEB_TEST"
+                test: "PROFILE_HIS_API_HIS_TEST"
             ],
             URL: [
                 demo: "https://his-backend-annar-demo.azurewebsites.net",
