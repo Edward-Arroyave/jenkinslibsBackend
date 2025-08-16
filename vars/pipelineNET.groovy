@@ -73,21 +73,31 @@ def call(Map config) {
                                 }
                             }
 
-                            stage("Publish ${api}") {
+                           stage("Publish ${api}") {
                                 dir("${apiConfig.CS_PROJ_PATH}") {
                                     withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                        // Extraemos valores del .PublishSettings
                                         powershell """
+                                            Write-Host "📄 Leyendo perfil de publicación desde: $env:PUBLISH_SETTINGS"
+
+                                            # Cargar el archivo de publicación
                                             [xml]$pub = Get-Content "$env:PUBLISH_SETTINGS"
                                             $profile = $pub.publishData.publishProfile | Where-Object { $_.publishMethod -eq "MSDeploy" }
-                                            echo "🔑 Usando perfil de publicación: $($profile.profileName)"
 
-                                            $url = $profile.publishUrl
+                                            if (-not $profile) {
+                                                Write-Error "❌ No se encontró un perfil con publishMethod=MSDeploy en $env:PUBLISH_SETTINGS"
+                                                exit 1
+                                            }
+
+                                            Write-Host "🔑 Usando perfil: $($profile.profileName)"
+
+                                            # Variables
+                                            $url  = $profile.publishUrl
                                             $site = $profile.msdeploySite
                                             $user = $profile.userName
                                             $pass = $profile.userPWD
 
-                                            dotnet msbuild ${api}.csproj `
+                                            # Ejecutar publicación con MSBuild
+                                            dotnet msbuild "${api}.csproj" `
                                                 /p:DeployOnBuild=true `
                                                 /p:WebPublishMethod=MSDeploy `
                                                 /p:MsDeployServiceUrl="$url" `
@@ -100,6 +110,7 @@ def call(Map config) {
                                     }
                                 }
                             }
+
 
 
 
