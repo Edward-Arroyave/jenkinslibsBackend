@@ -70,28 +70,43 @@ def call(Map config) {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
+                                                # Forzar TLS 1.2
                                                 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+                                                
                                                 Write-Host "📄 Publicando ${api}..."
-
+                                                
                                                 dotnet restore ${api}.csproj
+                                                dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
+                                                
+                                                Write-Host "📄 Leyendo perfil de publicación..."
+                                                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                                                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                                                # Crear carpeta de PublishProfiles si no existe
-                                                \$publishProfilePath = Join-Path -Path \$PWD -ChildPath "Properties/PublishProfiles"
-                                                if (-not (Test-Path \$publishProfilePath)) {
-                                                    New-Item -ItemType Directory -Path \$publishProfilePath | Out-Null
+                                                if (-not \$profile) { 
+                                                    Write-Error "❌ No se encontró un perfil válido" 
+                                                    exit 1 
                                                 }
 
-                                                # Copiar perfil de publicación
-                                                Copy-Item "\$env:PUBLISH_SETTINGS" -Destination (Join-Path \$publishProfilePath "Azure.pubxml") -Force
+                                                Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
+                                                \$user = \$profile.userName
+                                                \$pass = \$profile.userPWD
+                                                \$site = \$profile.msdeploySite
 
+                                                # Publicar usando dotnet publish
                                                 dotnet publish ${api}.csproj `
                                                     --configuration ${env.CONFIGURATION} `
-                                                    -p:PublishProfile=Azure `
-                                                    -p:AllowUntrustedCertificate=true
+                                                    --output ./publish `
+                                                    /p:DeployOnBuild=true `
+                                                    /p:WebPublishMethod=MSDeploy `
+                                                    /p:MsDeployServiceUrl="\$(\$profile.publishUrl)" `
+                                                    /p:DeployIisAppPath="\$site" `
+                                                    /p:UserName="\$user" `
+                                                    /p:Password="\$pass" `
+                                                    /p:AllowUntrustedCertificate=true `
+                                                    /p:MSDeployUseLegacyProvider=true
                                             """
                                         }
                                     }
-
                                     apisExitosas << api
                                 } catch (err) {
                                     echo "❌ Error en ${api}: ${err}"
