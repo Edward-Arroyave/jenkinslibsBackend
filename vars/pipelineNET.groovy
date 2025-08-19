@@ -69,43 +69,23 @@ def call(Map config) {
 
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                           powershell """
-                                                # Forzar TLS 1.2
-                                                [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-                                                
-                                                Write-Host "📄 Publicando ${api}..."
-                                                
-                                                dotnet restore ${api}.csproj
-                                                
-                                                Write-Host "📄 Leyendo perfil de publicación..."
-                                                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                                                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
-
-                                                if (-not \$profile) { 
-                                                    Write-Error "❌ No se encontró un perfil válido" 
-                                                    exit 1 
-                                                }
-
-                                                Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
-                                                \$user = \$profile.userName
-                                                \$pass = \$profile.userPWD
-                                                \$site = \$profile.msdeploySite
-                                                \$publishUrl = \$profile.publishUrl
-
-                                                # Usar MSBuild directamente evitando la dependencia circular
-                                                msbuild ${api}.csproj `
-                                                    /t:Build `
-                                                    /p:Configuration=${env.CONFIGURATION} `
-                                                    /p:DeployOnBuild=true `
-                                                    /p:PublishProfile="\$env:PUBLISH_SETTINGS" `
-                                                    /p:WebPublishMethod=MSDeploy `
-                                                    /p:MsDeployServiceUrl="\$publishUrl" `
-                                                    /p:DeployIisAppPath="\$site" `
-                                                    /p:UserName="\$user" `
-                                                    /p:Password="\$pass" `
-                                                    /p:AllowUntrustedCertificate=true `
-                                                    /p:SkipInvalidConfigurations=true
-                                            """
+                                          powershell """
+                                            # Forzar TLS 1.2
+                                            [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+                                            
+                                            Write-Host "📄 Publicando ${api}..."
+                                            
+                                            dotnet restore ${api}.csproj
+                                            
+                                            # Copiar el perfil de publicación al proyecto
+                                            Copy-Item "\$env:PUBLISH_SETTINGS" -Destination "./Properties/PublishProfiles/Azure.pubxml" -Force
+                                            
+                                            # Publicar usando el perfil
+                                            dotnet publish ${api}.csproj `
+                                                --configuration ${env.CONFIGURATION} `
+                                                -p:PublishProfile=Azure `
+                                                -p:AllowUntrustedCertificate=true
+                                        """
                                         }
                                     }
                                     apisExitosas << api
