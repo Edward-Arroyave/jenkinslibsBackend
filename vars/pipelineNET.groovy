@@ -46,7 +46,7 @@ def call(Map config) {
                     powershell '''
                         Write-Host "🔍 Configurando TLS 1.2..."
                         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-                        Write-Host "✅ TLS configurado: [System.Net.ServicePointManager]::SecurityProtocol"
+                        Write-Host "✅ TLS configurado"
                     '''
                 }
             }
@@ -73,9 +73,9 @@ def call(Map config) {
                                                 # Forzar TLS 1.2
                                                 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
                                                 
-                                                Write-Host "📄 Publicando ${api}..."
-                                                
-                                                # Publicar directamente evitando build separado
+                                                Write-Host "📄 Restaurando paquetes y publicando ${api}..."
+                                                dotnet restore ${api}.csproj
+
                                                 [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
                                                 \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
@@ -92,10 +92,9 @@ def call(Map config) {
                                                 dotnet publish ${api}.csproj `
                                                     --configuration ${env.CONFIGURATION} `
                                                     --output ./publish `
-                                                    /p:DeployOnBuild=true `
                                                     /p:WebPublishMethod=MSDeploy `
                                                     /p:MsDeployServiceUrl="\$(\$profile.publishUrl)" `
-                                                    /p:DeployIisAppPath="\$site" `
+                                                    /p:DeployIisAppPath="$site" `
                                                     /p:UserName="\$user" `
                                                     /p:Password="\$pass" `
                                                     /p:AllowUntrustedCertificate=true `
