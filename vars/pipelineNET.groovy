@@ -18,7 +18,6 @@ def call(Map config) {
             BUILD_FOLDER = "${env.WORKSPACE}/${env.BUILD_ID}"
             REPO_PATH = "${BUILD_FOLDER}/repo"
             REPO_URL = "${config.REPO_URL}"
-            CONFIGURATION = 'Release'
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
         }
 
@@ -42,73 +41,67 @@ def call(Map config) {
             }
 
             stage('Deploy APIs') {
-                steps {
-                    script {
-                        def configCompleto = new groovy.json.JsonSlurperClassic().parseText(env.CONFIG_COMPLETO)
+    steps {
+        script {
+            def configCompleto = new groovy.json.JsonSlurperClassic().parseText(env.CONFIG_COMPLETO)
 
-                        for (api in apis) {
-                            stage("Deploy ${api}") {
-                                try {
-                                    def apiConfig = [
-                                        CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
-                                        CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
-                                        URL: configCompleto.APIS[api].URL[config.AMBIENTE]
-                                    ]
+            for (api in apis) {
+                stage("Deploy ${api}") {
+                    try {
+                        def apiConfig = [
+                            CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
+                            CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
+                        ]
 
-                                    echo "=== Desplegando API: ${api} ==="
-                                    echo "Ruta proyecto: ${apiConfig.CS_PROJ_PATH}"
-                                    echo "Credenciales usadas: ${apiConfig.CREDENTIALS_ID}"
-                                    echo "URL de despliegue: ${apiConfig.URL}"
+                        echo "=== Desplegando API: ${api} ==="
+                        echo "Ruta proyecto: ${apiConfig.CS_PROJ_PATH}"
+                        echo "Credenciales usadas: ${apiConfig.CREDENTIALS_ID}"
 
-                                    dir("${apiConfig.CS_PROJ_PATH}") {
-                                        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                           powershell """
-                                               
-                                                Write-Host "📄 Restaurando y compilando ${api}..."
+                        dir("${apiConfig.CS_PROJ_PATH}") {
+                            withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                                powershell """
+                                    # Forzar TLS 1.2 y detener ejecución en errores
+                                    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                                    \$ErrorActionPreference = "Stop"
 
-                                                dotnet restore ${api}.csproj
-                                                dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
-                                                
-                                                Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
-                                                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                                                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+                                    Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
+                                    [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
 
-                                                if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
+                                    # Tomar solo el primer perfil MSDeploy
+                                    \$profile = (\$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" })[0]
+                                    if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
 
-                                                Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
-                                                \$url  = \$profile.publishUrl
-                                                \$site = \$profile.msdeploySite
-                                                \$user = \$profile.userName
-                                                \$pass = \$profile.userPWD
+                                    Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
+                                    \$url  = \$profile.publishUrl
+                                    \$site = \$profile.msdeploySite
+                                    \$user = \$profile.userName
+                                    \$pass = \$profile.userPWD
 
-                                                \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
-                                                if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
+                                    # Obtener archivo .csproj único
+                                    \$projectFile = (Get-ChildItem -Filter "*.csproj" | Select-Object -First 1).FullName
+                                    if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
 
-                                                Write-Host "🏗 Publicando proyecto: \$projectFile"
+                                    Write-Host "🏗 Publicando proyecto: \$projectFile usando configuración del archivo"
 
-                                                dotnet msbuild "\$projectFile" `
-                                                    /p:DeployOnBuild=true `
-                                                    /p:WebPublishMethod=MSDeploy `
-                                                    /p:MsDeployServiceUrl="\$url" `
-                                                    /p:DeployIisAppPath="\$site" `
-                                                    /p:UserName="\$user" `
-                                                    /p:Password="\$pass" `
-                                                    /p:Configuration=${CONFIGURATION} `
-                                                    /p:AllowUntrustedCertificate=true
-                                            """
-
-                                        }
-                                    }
-                                    apisExitosas << api
-                                } catch (err) {
-                                    echo "❌ Error en ${api}: ${err}"
-                                    apisFallidas << api
-                                }
+                                    dotnet msbuild "\$projectFile" `
+                                        /p:DeployOnBuild=true `
+                                        /p:WebPublishMethod=MSDeploy `
+                                        /p:PublishProfile="\$env:PUBLISH_SETTINGS" `
+                                        /p:AllowUntrustedCertificate=true
+                                """
                             }
                         }
+                        apisExitosas << api
+                    } catch (err) {
+                        echo "❌ Error en ${api}: ${err}"
+                        apisFallidas << api
                     }
                 }
             }
+        }
+    }
+}
+
         }
 
         post {
