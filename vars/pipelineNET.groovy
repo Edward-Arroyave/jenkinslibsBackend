@@ -65,6 +65,8 @@ def call(Map config) {
                                             powershell """
                                                 Write-Host "📄 Restaurando y compilando ${api}..."
 
+
+                                                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                                                 dotnet restore ${api}.csproj
                                                 dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
                                                 
