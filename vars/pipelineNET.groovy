@@ -69,12 +69,12 @@ def call(Map config) {
 
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                            powershell """
+                                            powershell '''
                                                 # Forzar TLS 1.2
                                                 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
                                                 
-                                                Write-Host "📄 Restaurando paquetes y publicando ${api}..."
-                                                dotnet restore ${api}.csproj
+                                                Write-Host "📄 Restaurando paquetes y publicando ''' + api + '''..."
+                                                dotnet restore ''' + api + '''.csproj
 
                                                 [xml]$pub = Get-Content "$env:PUBLISH_SETTINGS"
                                                 $profile = $pub.publishData.publishProfile | Where-Object { $_.publishMethod -eq "MSDeploy" }
@@ -84,17 +84,17 @@ def call(Map config) {
                                                     exit 1 
                                                 }
 
-                                                dotnet publish ${api}.csproj `
-                                                    --configuration ${env.CONFIGURATION} `
-                                                    --output ./publish `
-                                                    /p:WebPublishMethod=MSDeploy `
-                                                    /p:MsDeployServiceUrl="$($profile.publishUrl)" `
-                                                    /p:DeployIisAppPath="$($profile.msdeploySite)" `
-                                                    /p:UserName="$($profile.userName)" `
-                                                    /p:Password="$($profile.userPWD)" `
-                                                    /p:AllowUntrustedCertificate=true `
+                                                dotnet publish ''' + api + '''.csproj \
+                                                    --configuration ''' + env.CONFIGURATION + ''' \
+                                                    --output ./publish \
+                                                    /p:WebPublishMethod=MSDeploy \
+                                                    /p:MsDeployServiceUrl="$($profile.publishUrl)" \
+                                                    /p:DeployIisAppPath="$($profile.msdeploySite)" \
+                                                    /p:UserName="$($profile.userName)" \
+                                                    /p:Password="$($profile.userPWD)" \
+                                                    /p:AllowUntrustedCertificate=true \
                                                     /p:MSDeployUseLegacyProvider=true
-                                            """
+                                            '''
                                         }
                                     }
                                     apisExitosas << api
