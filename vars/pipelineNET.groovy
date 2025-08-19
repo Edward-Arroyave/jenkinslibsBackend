@@ -11,7 +11,7 @@ def call(Map config) {
 
     pipeline {
         agent {
-            label 'Windws-node'
+            label 'Windows-node'
         }
 
         environment {
@@ -44,7 +44,7 @@ def call(Map config) {
             stage('Verificar TLS Config') {
                 steps {
                     powershell '''
-                        Write-Host "🔍 Configurando TLS 1.2..."
+                        Write-Host "🔍 Forzando TLS 1.2..."
                         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
                         Write-Host "✅ TLS configurado"
                     '''
@@ -61,40 +61,42 @@ def call(Map config) {
                                 try {
                                     def apiConfig = [
                                         CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
-                                        CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
-                                        URL: configCompleto.APIS[api].URL[config.AMBIENTE]
+                                        CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
                                     ]
 
                                     echo "=== Desplegando API: ${api} ==="
 
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                            powershell '''
-                                                # Forzar TLS 1.2
-                                                [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-                                                
-                                                Write-Host "📄 Restaurando paquetes y publicando ''' + api + '''..."
-                                                dotnet restore ''' + api + '''.csproj
+                                            powershell """
+                                                Write-Host "📄 Restaurando paquetes y compilando ${api}..."
+                                                dotnet restore ${api}.csproj
+                                                dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
 
+                                                Write-Host "📄 Publicando ${api} usando perfil MSDeploy..."
                                                 [xml]$pub = Get-Content "$env:PUBLISH_SETTINGS"
                                                 $profile = $pub.publishData.publishProfile | Where-Object { $_.publishMethod -eq "MSDeploy" }
 
-                                                if (-not $profile) { 
-                                                    Write-Error "❌ No se encontró un perfil válido" 
-                                                    exit 1 
+                                                if (-not $profile) {
+                                                    Write-Error "❌ No se encontró un perfil válido"
+                                                    exit 1
                                                 }
 
-                                                dotnet publish ''' + api + '''.csproj \
-                                                    --configuration ''' + env.CONFIGURATION + ''' \
-                                                    --output ./publish \
-                                                    /p:WebPublishMethod=MSDeploy \
-                                                    /p:MsDeployServiceUrl="$($profile.publishUrl)" \
-                                                    /p:DeployIisAppPath="$($profile.msdeploySite)" \
-                                                    /p:UserName="$($profile.userName)" \
-                                                    /p:Password="$($profile.userPWD)" \
-                                                    /p:AllowUntrustedCertificate=true \
-                                                    /p:MSDeployUseLegacyProvider=true
-                                            '''
+                                                # Publicar directamente, igual que Visual Studio
+                                                dotnet publish ${api}.csproj `
+                                                    --configuration ${env.CONFIGURATION} `
+                                                    --output ./publish `
+                                                    /p:WebPublishMethod=MSDeploy `
+                                                    /p:MsDeployServiceUrl="$($profile.publishUrl)" `
+                                                    /p:DeployIisAppPath="$($profile.msdeploySite)" `
+                                                    /p:UserName="$($profile.userName)" `
+                                                    /p:Password="$($profile.userPWD)" `
+                                                    /p:AllowUntrustedCertificate=true `
+                                                    /p:PrecompileBeforePublish=true `
+                                                    /p:EnableMSDeployAppOffline=true `
+                                                    /p:UseWPP_CopyWebApplication=true `
+                                                    /p:PipelineDependsOnBuild=false
+                                            """
                                         }
                                     }
                                     apisExitosas << api
@@ -115,7 +117,7 @@ def call(Map config) {
                     def APIS_FAILURE = ""
                     def APIS_SUCCESSFUL = ""
                     if (apisExitosas) { APIS_SUCCESSFUL += "✅ ${apisExitosas.join(', ')}\n" }
-                    if (apisFallidas) { APIS_FAILURE    += "❌ ${apisFallidas.join(', ')}" }
+                    if (apisFallidas) { APIS_FAILURE += "❌ ${apisFallidas.join(', ')}" }
 
                     sendNotificationTeamsNET([
                         APIS_SUCCESSFUL: APIS_SUCCESSFUL,
