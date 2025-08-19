@@ -11,7 +11,7 @@ def call(Map config) {
 
     pipeline {
         agent {
-            label 'Windows-node'
+            label 'Windws-node'
         }
 
         environment {
@@ -71,30 +71,30 @@ def call(Map config) {
                                             powershell """
                                                 Write-Host "📄 Restaurando paquetes y compilando ${api}..."
                                                 dotnet restore ${api}.csproj
-                                                dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
+                                                dotnet build ${api}.csproj --configuration \${env:CONFIGURATION} --no-restore
 
                                                 Write-Host "📄 Publicando ${api} usando perfil MSDeploy..."
-                                                [xml]$pub = Get-Content "$env:PUBLISH_SETTINGS"
-                                                $profile = $pub.publishData.publishProfile | Where-Object { $_.publishMethod -eq "MSDeploy" }
+                                                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                                                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                                                if (-not $profile) {
+                                                if (-not \$profile) {
                                                     Write-Error "❌ No se encontró un perfil válido"
                                                     exit 1
                                                 }
 
                                                 # Publicar directamente, igual que Visual Studio
-                                                dotnet publish ${api}.csproj `
-                                                    --configuration ${env.CONFIGURATION} `
-                                                    --output ./publish `
-                                                    /p:WebPublishMethod=MSDeploy `
-                                                    /p:MsDeployServiceUrl="$($profile.publishUrl)" `
-                                                    /p:DeployIisAppPath="$($profile.msdeploySite)" `
-                                                    /p:UserName="$($profile.userName)" `
-                                                    /p:Password="$($profile.userPWD)" `
-                                                    /p:AllowUntrustedCertificate=true `
-                                                    /p:PrecompileBeforePublish=true `
-                                                    /p:EnableMSDeployAppOffline=true `
-                                                    /p:UseWPP_CopyWebApplication=true `
+                                                dotnet publish ${api}.csproj \\
+                                                    --configuration \${env:CONFIGURATION} \\
+                                                    --output ./publish \\
+                                                    /p:WebPublishMethod=MSDeploy \\
+                                                    /p:MsDeployServiceUrl="\$(\$profile.publishUrl)" \\
+                                                    /p:DeployIisAppPath="\$(\$profile.msdeploySite)" \\
+                                                    /p:UserName="\$(\$profile.userName)" \\
+                                                    /p:Password="\$(\$profile.userPWD)" \\
+                                                    /p:AllowUntrustedCertificate=true \\
+                                                    /p:PrecompileBeforePublish=true \\
+                                                    /p:EnableMSDeployAppOffline=true \\
+                                                    /p:UseWPP_CopyWebApplication=true \\
                                                     /p:PipelineDependsOnBuild=false
                                             """
                                         }
@@ -116,7 +116,7 @@ def call(Map config) {
                 script {
                     def APIS_FAILURE = ""
                     def APIS_SUCCESSFUL = ""
-                    if (apisExitosas) { APIS_SUCCESSFUL += "✅ ${apisExitosas.join(', ')}\n" }
+                    if (apisExitosas) { APIS_SUCCESSFUL += "✅ ${apisExitosas.join(', ')}\\n" }
                     if (apisFallidas) { APIS_FAILURE += "❌ ${apisFallidas.join(', ')}" }
 
                     sendNotificationTeamsNET([
