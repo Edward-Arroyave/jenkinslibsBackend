@@ -41,59 +41,12 @@ def call(Map config) {
                 }
             }
 
-            stage('Configuración TLS Completa') {
+            stage('Verificar TLS Config') {
                 steps {
                     powershell '''
-                        Write-Host "🔧 Configurando stack de seguridad completo..."
-                        
-                        # 1. Forzar TLS 1.2 como protocolo mínimo
+                        Write-Host "🔍 Forzando TLS 1.2..."
                         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-                        
-                        # 2. Habilitar cifrados específicos requeridos por Azure
-                        # TLS_RSA_WITH_AES_128_CBC_SHA (0x002F) - Este es el específico que necesita el servidor
-                        Write-Host "🔓 Habilitando cifrado TLS_RSA_WITH_AES_128_CBC_SHA..."
-                        
-                        Add-Type -TypeDefinition @"
-                            using System;
-                            using System.Net;
-                            public static class CipherHelper {
-                                public const int TLS_RSA_WITH_AES_128_CBC_SHA = 0x002F;
-                                
-                                public static void EnableWeakCiphers() {
-                                    // Habilitar el cifrado específico requerido
-                                    ServicePointManager.SecurityProtocol |= (SecurityProtocolType)TLS_RSA_WITH_AES_128_CBC_SHA;
-                                    
-                                    // También habilitar otros protocolos comunes para compatibilidad
-                                    ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls;
-                                    ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls11;
-                                    ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
-                                }
-                            }
-"@
-                        [CipherHelper]::EnableWeakCiphers()
-                        
-                        # 3. Configurar políticas adicionales de conexión
-                        [System.Net.ServicePointManager]::Expect100Continue = $false
-                        [System.Net.ServicePointManager]::CheckCertificateRevocationList = $false
-                        
-                        # 4. Mostrar configuración final
-                        Write-Host "✅ Configuración de seguridad aplicada:"
-                        Write-Host "Protocolos habilitados: $([System.Net.ServicePointManager]::SecurityProtocol)"
-                        
-                        # 5. Verificar conectividad con el endpoint
-                        try {
-                            Write-Host "🔍 Probando conectividad con Azure..."
-                            $testUrl = "https://agendamiento-api-his-co-pruebas.scm.azurewebsites.net"
-                            $request = [System.Net.WebRequest]::Create($testUrl)
-                            $request.Method = "HEAD"
-                            $request.Timeout = 10000
-                            
-                            $response = $request.GetResponse()
-                            Write-Host "✅ Conectividad verificada: $($response.StatusCode)"
-                            $response.Close()
-                        } catch {
-                            Write-Host "⚠️ Advertencia de conectividad: $($_.Exception.Message)"
-                        }
+                        Write-Host "✅ TLS configurado"
                     '''
                 }
             }
@@ -116,10 +69,6 @@ def call(Map config) {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
-                                                # Reforzar configuración TLS para esta sesión
-                                                [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-                                                [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 0x00000040
-                                                
                                                 Write-Host "📄 Restaurando paquetes y compilando ${api}..."
                                                 dotnet restore ${api}.csproj
                                                 dotnet build ${api}.csproj --configuration \${env:CONFIGURATION} --no-restore
@@ -133,38 +82,20 @@ def call(Map config) {
                                                     exit 1
                                                 }
 
-                                                # Publicar con parámetros optimizados
-                                                \$publishArgs = @(
-                                                    'publish',
-                                                    '${api}.csproj',
-                                                    '--configuration', "\${env:CONFIGURATION}",
-                                                    '--output', './publish',
-                                                    '/p:WebPublishMethod=MSDeploy',
-                                                    '/p:MsDeployServiceUrl="' + \$profile.publishUrl + '"',
-                                                    '/p:DeployIisAppPath="' + \$profile.msdeploySite + '"',
-                                                    '/p:UserName="' + \$profile.userName + '"',
-                                                    '/p:Password="' + \$profile.userPWD + '"',
-                                                    '/p:AllowUntrustedCertificate=true',
-                                                    '/p:AuthType=Basic',
-                                                    '/p:SkipExtraFilesOnServer=true',
-                                                    '/p:MSDeployUseChecksum=true',
-                                                    '/p:EnableMSDeployBackup=false',
-                                                    '/p:PrecompileBeforePublish=true',
-                                                    '/p:EnableMSDeployAppOffline=true',
-                                                    '/p:UseWPP_CopyWebApplication=true',
-                                                    '/p:PipelineDependsOnBuild=false',
-                                                    '/p:DeleteExistingFiles=true'
-                                                )
-
-                                                Write-Host "🚀 Ejecutando publicación de ${api}..."
-                                                & dotnet @publishArgs
-                                                
-                                                if (\$LASTEXITCODE -ne 0) {
-                                                    Write-Error "❌ Error en la publicación de ${api}"
-                                                    exit 1
-                                                }
-                                                
-                                                Write-Host "✅ ${api} publicado exitosamente"
+                                                # Publicar directamente, igual que Visual Studio
+                                                dotnet publish ${api}.csproj \\
+                                                    --configuration \${env:CONFIGURATION} \\
+                                                    --output ./publish \\
+                                                    /p:WebPublishMethod=MSDeploy \\
+                                                    /p:MsDeployServiceUrl="\$(\$profile.publishUrl)" \\
+                                                    /p:DeployIisAppPath="\$(\$profile.msdeploySite)" \\
+                                                    /p:UserName="\$(\$profile.userName)" \\
+                                                    /p:Password="\$(\$profile.userPWD)" \\
+                                                    /p:AllowUntrustedCertificate=true \\
+                                                    /p:PrecompileBeforePublish=true \\
+                                                    /p:EnableMSDeployAppOffline=true \\
+                                                    /p:UseWPP_CopyWebApplication=true \\
+                                                    /p:PipelineDependsOnBuild=false
                                             """
                                         }
                                     }
@@ -176,16 +107,6 @@ def call(Map config) {
                             }
                         }
                     }
-                }
-            }
-
-            stage('Verificación Final') {
-                steps {
-                    powershell '''
-                        Write-Host "✅ Despliegue completado"
-                        Write-Host "📊 Resumen de protocolos habilitados:"
-                        Write-Host "$([System.Net.ServicePointManager]::SecurityProtocol)"
-                    '''
                 }
             }
         }
@@ -200,20 +121,11 @@ def call(Map config) {
 
                     sendNotificationTeamsNET([
                         APIS_SUCCESSFUL: APIS_SUCCESSFUL,
-                        APIS_FAILURE: APIS_FAILURE,
-                        TLS_CONFIG: "Cifrado TLS_RSA_WITH_AES_128_CBC_SHA habilitado"
+                        APIS_FAILURE: APIS_FAILURE
                     ])
                 }
 
                 cleanWs()
-            }
-            
-            success {
-                echo "🎉 Pipeline ejecutado exitosamente"
-            }
-            
-            failure {
-                echo "❌ Pipeline falló - Revisar configuración TLS"
             }
         }
     }
