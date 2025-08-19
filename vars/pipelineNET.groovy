@@ -20,7 +20,6 @@ def call(Map config) {
             REPO_URL = "${config.REPO_URL}"
             CONFIGURATION = 'Release'
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
-            DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER = "0"
         }
 
         stages {
@@ -36,18 +35,9 @@ def call(Map config) {
 
                         cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
 
+                        // Guardamos configCompleto para el resto
                         env.CONFIG_COMPLETO = groovy.json.JsonOutput.toJson(configCompleto)
                     }
-                }
-            }
-
-            stage('Verificar TLS Config') {
-                steps {
-                    powershell '''
-                        Write-Host "🔍 Forzando TLS 1.2..."
-                        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-                        Write-Host "✅ TLS configurado"
-                    '''
                 }
             }
 
@@ -61,41 +51,49 @@ def call(Map config) {
                                 try {
                                     def apiConfig = [
                                         CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
-                                        CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
+                                        CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
+                                        URL: configCompleto.APIS[api].URL[config.AMBIENTE]
                                     ]
 
                                     echo "=== Desplegando API: ${api} ==="
+                                    echo "Ruta proyecto: ${apiConfig.CS_PROJ_PATH}"
+                                    echo "Credenciales usadas: ${apiConfig.CREDENTIALS_ID}"
+                                    echo "URL de despliegue: ${apiConfig.URL}"
 
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
-                                                Write-Host "📄 Restaurando paquetes y compilando ${api}..."
-                                                dotnet restore ${api}.csproj
-                                                dotnet build ${api}.csproj --configuration \${env:CONFIGURATION} --no-restore
+                                                Write-Host "📄 Restaurando y compilando ${api}..."
 
-                                                Write-Host "📄 Publicando ${api} usando perfil MSDeploy..."
+                                                dotnet restore ${api}.csproj
+                                                dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
+                                                
+                                                Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
                                                 [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
                                                 \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                                                if (-not \$profile) {
-                                                    Write-Error "❌ No se encontró un perfil válido"
-                                                    exit 1
-                                                }
+                                                if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
 
-                                                # Publicar directamente, igual que Visual Studio
-                                                dotnet publish ${api}.csproj \\
-                                                    --configuration \${env:CONFIGURATION} \\
-                                                    --output ./publish \\
-                                                    /p:WebPublishMethod=MSDeploy \\
-                                                    /p:MsDeployServiceUrl="\$(\$profile.publishUrl)" \\
-                                                    /p:DeployIisAppPath="\$(\$profile.msdeploySite)" \\
-                                                    /p:UserName="\$(\$profile.userName)" \\
-                                                    /p:Password="\$(\$profile.userPWD)" \\
-                                                    /p:AllowUntrustedCertificate=true \\
-                                                    /p:PrecompileBeforePublish=true \\
-                                                    /p:EnableMSDeployAppOffline=true \\
-                                                    /p:UseWPP_CopyWebApplication=true \\
-                                                    /p:PipelineDependsOnBuild=false
+                                                Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
+                                                \$url  = \$profile.publishUrl
+                                                \$site = \$profile.msdeploySite
+                                                \$user = \$profile.userName
+                                                \$pass = \$profile.userPWD
+
+                                                \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                                                if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
+
+                                                Write-Host "🏗 Publicando proyecto: \$projectFile"
+
+                                                dotnet msbuild "\$projectFile" `
+                                                    /p:DeployOnBuild=true `
+                                                    /p:WebPublishMethod=MSDeploy `
+                                                    /p:MsDeployServiceUrl="\$url" `
+                                                    /p:DeployIisAppPath="\$site" `
+                                                    /p:UserName="\$user" `
+                                                    /p:Password="\$pass" `
+                                                    /p:Configuration=${CONFIGURATION} `
+                                                    /p:AllowUntrustedCertificate=true
                                             """
                                         }
                                     }
@@ -116,8 +114,8 @@ def call(Map config) {
                 script {
                     def APIS_FAILURE = ""
                     def APIS_SUCCESSFUL = ""
-                    if (apisExitosas) { APIS_SUCCESSFUL += "✅ ${apisExitosas.join(', ')}\\n" }
-                    if (apisFallidas) { APIS_FAILURE += "❌ ${apisFallidas.join(', ')}" }
+                    if (apisExitosas) { APIS_SUCCESSFUL += "✅ ${apisExitosas.join(', ')}\n" }
+                    if (apisFallidas) { APIS_FAILURE    += "❌ ${apisFallidas.join(', ')}" }
 
                     sendNotificationTeamsNET([
                         APIS_SUCCESSFUL: APIS_SUCCESSFUL,
