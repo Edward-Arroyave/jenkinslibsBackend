@@ -57,35 +57,36 @@ def call(Map config) {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
-                                                # Evitar cargar perfil PowerShell
-                                                \$ErrorActionPreference = "Stop"
-                                                $env:PSModulePath = ""
+                                               # Forzar TLS 1.2 y detener ejecución en errores
+                                                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                                                $ErrorActionPreference = "Stop"
 
                                                 # Validar archivo de publicación
-                                                if (-not (Test-Path \$env:PUBLISH_SETTINGS)) {
+                                                if (-not (Test-Path $env:PUBLISH_SETTINGS)) {
                                                     Write-Error "❌ Archivo PUBLISH_SETTINGS no encontrado"
                                                     exit 1
                                                 }
 
-                                                Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
-                                                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                                                \$profile = (\$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" })[0]
+                                                Write-Host "📄 Leyendo perfil de publicación desde: $env:PUBLISH_SETTINGS"
+                                                [xml]$pub = Get-Content "$env:PUBLISH_SETTINGS"
+                                                $profile = ($pub.publishData.publishProfile | Where-Object { $_.publishMethod -eq "MSDeploy" })[0]
 
-                                                if (-not \$profile) {
+                                                if (-not $profile) {
                                                     Write-Error "❌ No se encontró un perfil MSDeploy válido"
                                                     exit 1
                                                 }
 
-                                                Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
+                                                Write-Host "🔑 Usando perfil: $($profile.profileName)"
 
                                                 # Publicar con dotnet publish
                                                 dotnet publish . `
                                                     --configuration Release `
                                                     --output "${BUILD_FOLDER}/publish/${api}" `
-                                                    /p:PublishProfile="\$env:PUBLISH_SETTINGS" `
+                                                    /p:PublishProfile="$env:PUBLISH_SETTINGS" `
                                                     /p:AllowUntrustedCertificate=true
 
                                                 Write-Host "🏗 Publicación completada para ${api}"
+
                                             """
                                         }
                                     }
