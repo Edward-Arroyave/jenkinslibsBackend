@@ -15,6 +15,6 @@ return [
                 demo: "",
                 test: "https://his-backend-caracterizacion-annar-pruebas.azurewebsites.net"
             ]
-        ],
+        ]
     ]
 ]
