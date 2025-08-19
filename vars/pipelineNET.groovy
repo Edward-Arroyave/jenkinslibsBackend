@@ -20,6 +20,7 @@ def call(Map config) {
             REPO_URL = "${config.REPO_URL}"
             CONFIGURATION = 'Release'
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
+            DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER = "0"
         }
 
         stages {
@@ -35,9 +36,18 @@ def call(Map config) {
 
                         cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
 
-                        // Guardamos configCompleto para el resto
                         env.CONFIG_COMPLETO = groovy.json.JsonOutput.toJson(configCompleto)
                     }
+                }
+            }
+
+            stage('Verificar TLS Config') {
+                steps {
+                    powershell '''
+                        Write-Host "🔍 Configurando TLS 1.2..."
+                        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+                        Write-Host "✅ TLS configurado: [System.Net.ServicePointManager]::SecurityProtocol"
+                    '''
                 }
             }
 
@@ -56,44 +66,44 @@ def call(Map config) {
                                     ]
 
                                     echo "=== Desplegando API: ${api} ==="
-                                    echo "Ruta proyecto: ${apiConfig.CS_PROJ_PATH}"
-                                    echo "Credenciales usadas: ${apiConfig.CREDENTIALS_ID}"
-                                    echo "URL de despliegue: ${apiConfig.URL}"
 
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
-                                                Write-Host "📄 Restaurando y compilando ${api}..."
-
+                                                # Forzar TLS 1.2
+                                                [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+                                                
+                                                Write-Host "📄 Publicando ${api}..."
+                                                
                                                 dotnet restore ${api}.csproj
                                                 dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
                                                 
-                                                Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
+                                                Write-Host "📄 Leyendo perfil de publicación..."
                                                 [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
                                                 \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                                                if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
+                                                if (-not \$profile) { 
+                                                    Write-Error "❌ No se encontró un perfil válido" 
+                                                    exit 1 
+                                                }
 
                                                 Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
-                                                \$url  = \$profile.publishUrl
-                                                \$site = \$profile.msdeploySite
                                                 \$user = \$profile.userName
                                                 \$pass = \$profile.userPWD
+                                                \$site = \$profile.msdeploySite
 
-                                                \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
-                                                if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
-
-                                                Write-Host "🏗 Publicando proyecto: \$projectFile"
-
-                                                dotnet msbuild "\$projectFile" `
+                                                # Publicar usando dotnet publish
+                                                dotnet publish ${api}.csproj `
+                                                    --configuration ${env.CONFIGURATION} `
+                                                    --output ./publish `
                                                     /p:DeployOnBuild=true `
                                                     /p:WebPublishMethod=MSDeploy `
-                                                    /p:MsDeployServiceUrl="\$url" `
+                                                    /p:MsDeployServiceUrl="\$(\$profile.publishUrl)" `
                                                     /p:DeployIisAppPath="\$site" `
                                                     /p:UserName="\$user" `
                                                     /p:Password="\$pass" `
-                                                    /p:Configuration=${CONFIGURATION} `
-                                                    /p:AllowUntrustedCertificate=true
+                                                    /p:AllowUntrustedCertificate=true `
+                                                    /p:MSDeployUseLegacyProvider=true
                                             """
                                         }
                                     }
