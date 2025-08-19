@@ -63,8 +63,7 @@ def call(Map config) {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                            powershell """
-                                                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
+                                               
                                                 Write-Host "📄 Restaurando y compilando ${api}..."
 
                                                 dotnet restore ${api}.csproj
