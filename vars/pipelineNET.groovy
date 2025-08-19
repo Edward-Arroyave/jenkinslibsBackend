@@ -69,25 +69,29 @@ def call(Map config) {
 
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                          powershell """
-                                            # Forzar TLS 1.2
-                                            [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-                                            
-                                            Write-Host "📄 Publicando ${api}..."
-                                            
-                                            dotnet restore ${api}.csproj
-                                            
-                                            # Copiar el perfil de publicación al proyecto
-                                            Copy-Item "\$env:PUBLISH_SETTINGS" -Destination "./Properties/PublishProfiles/Azure.pubxml" -Force
-                                            
-                                            # Publicar usando el perfil
-                                            dotnet publish ${api}.csproj `
-                                                --configuration ${env.CONFIGURATION} `
-                                                -p:PublishProfile=Azure `
-                                                -p:AllowUntrustedCertificate=true
-                                        """
+                                            powershell """
+                                                [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+                                                Write-Host "📄 Publicando ${api}..."
+
+                                                dotnet restore ${api}.csproj
+
+                                                # Crear carpeta de PublishProfiles si no existe
+                                                \$publishProfilePath = Join-Path -Path \$PWD -ChildPath "Properties/PublishProfiles"
+                                                if (-not (Test-Path \$publishProfilePath)) {
+                                                    New-Item -ItemType Directory -Path \$publishProfilePath | Out-Null
+                                                }
+
+                                                # Copiar perfil de publicación
+                                                Copy-Item "\$env:PUBLISH_SETTINGS" -Destination (Join-Path \$publishProfilePath "Azure.pubxml") -Force
+
+                                                dotnet publish ${api}.csproj `
+                                                    --configuration ${env.CONFIGURATION} `
+                                                    -p:PublishProfile=Azure `
+                                                    -p:AllowUntrustedCertificate=true
+                                            """
                                         }
                                     }
+
                                     apisExitosas << api
                                 } catch (err) {
                                     echo "❌ Error en ${api}: ${err}"
