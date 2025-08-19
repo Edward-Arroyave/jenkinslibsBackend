@@ -75,10 +75,7 @@ def call(Map config) {
                                                 
                                                 Write-Host "📄 Publicando ${api}..."
                                                 
-                                                dotnet restore ${api}.csproj
-                                                dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
-                                                
-                                                Write-Host "📄 Leyendo perfil de publicación..."
+                                                # Publicar directamente evitando build separado
                                                 [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
                                                 \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
@@ -92,7 +89,6 @@ def call(Map config) {
                                                 \$pass = \$profile.userPWD
                                                 \$site = \$profile.msdeploySite
 
-                                                # Publicar usando dotnet publish
                                                 dotnet publish ${api}.csproj `
                                                     --configuration ${env.CONFIGURATION} `
                                                     --output ./publish `
