@@ -75,10 +75,9 @@ def call(Map config) {
                                                 
                                                 Write-Host "📄 Publicando ${api}..."
                                                 
-                                                # Solo restaurar y publicar directamente
                                                 dotnet restore ${api}.csproj
                                                 
-                                                Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
+                                                Write-Host "📄 Leyendo perfil de publicación..."
                                                 [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
                                                 \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
@@ -93,20 +92,19 @@ def call(Map config) {
                                                 \$site = \$profile.msdeploySite
                                                 \$publishUrl = \$profile.publishUrl
 
-                                                # Publicar usando dotnet publish directamente
-                                                dotnet publish ${api}.csproj `
-                                                    --configuration ${env.CONFIGURATION} `
-                                                    --output ./publish-output `
-                                                    /p:PublishProfile="Azure" `
+                                                # Usar MSBuild directamente evitando la dependencia circular
+                                                msbuild ${api}.csproj `
+                                                    /t:Build `
+                                                    /p:Configuration=${env.CONFIGURATION} `
                                                     /p:DeployOnBuild=true `
+                                                    /p:PublishProfile="\$env:PUBLISH_SETTINGS" `
                                                     /p:WebPublishMethod=MSDeploy `
                                                     /p:MsDeployServiceUrl="\$publishUrl" `
                                                     /p:DeployIisAppPath="\$site" `
-                                                    /p:Username="\$user" `
+                                                    /p:UserName="\$user" `
                                                     /p:Password="\$pass" `
                                                     /p:AllowUntrustedCertificate=true `
-                                                    /p:SkipExtraFilesOnServer=true `
-                                                    /p:EnableMSDeployAppOffline=true
+                                                    /p:SkipInvalidConfigurations=true
                                             """
                                         }
                                     }
