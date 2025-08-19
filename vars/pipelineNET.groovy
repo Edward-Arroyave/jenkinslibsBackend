@@ -51,64 +51,77 @@ def call(Map config) {
                 }
             }
 
-            stage('Deploy APIs') {
-                steps {
-                    script {
-                        def configCompleto = new groovy.json.JsonSlurperClassic().parseText(env.CONFIG_COMPLETO)
+           stage('Deploy APIs') {
+    steps {
+        script {
+            def configCompleto = new groovy.json.JsonSlurperClassic().parseText(env.CONFIG_COMPLETO)
 
-                        for (api in apis) {
-                            stage("Deploy ${api}") {
-                                try {
-                                    def apiConfig = [
-                                        CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
-                                        CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
-                                    ]
+            for (api in apis) {
+                stage("Deploy ${api}") {
+                    try {
+                        def apiConfig = [
+                            CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
+                            CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
+                        ]
 
-                                    echo "=== Desplegando API: ${api} ==="
+                        echo "=== Desplegando API: ${api} ==="
 
-                                    dir("${apiConfig.CS_PROJ_PATH}") {
-                                        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                            powershell """
-                                                Write-Host "📄 Restaurando paquetes y compilando ${api}..."
-                                                dotnet restore ${api}.csproj
-                                                dotnet build ${api}.csproj --configuration \${env:CONFIGURATION} --no-restore
+                        dir("${apiConfig.CS_PROJ_PATH}") {
+                            withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                                powershell """
+                                    Write-Host "📄 Restaurando paquetes y compilando ${api}..."
+                                    dotnet restore ${api}.csproj
+                                    dotnet build ${api}.csproj --configuration \${env:CONFIGURATION} --no-restore
 
-                                                Write-Host "📄 Publicando ${api} usando perfil MSDeploy..."
-                                                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                                                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+                                    Write-Host "📄 Publicando ${api} usando perfil MSDeploy..."
+                                    [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                                    \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                                                if (-not \$profile) {
-                                                    Write-Error "❌ No se encontró un perfil válido"
-                                                    exit 1
-                                                }
-
-                                                # Publicar directamente, igual que Visual Studio
-                                                dotnet publish ${api}.csproj \\
-                                                    --configuration \${env:CONFIGURATION} \\
-                                                    --output ./publish \\
-                                                    /p:WebPublishMethod=MSDeploy \\
-                                                    /p:MsDeployServiceUrl="\$(\$profile.publishUrl)" \\
-                                                    /p:DeployIisAppPath="\$(\$profile.msdeploySite)" \\
-                                                    /p:UserName="\$(\$profile.userName)" \\
-                                                    /p:Password="\$(\$profile.userPWD)" \\
-                                                    /p:AllowUntrustedCertificate=true \\
-                                                    /p:PrecompileBeforePublish=true \\
-                                                    /p:EnableMSDeployAppOffline=true \\
-                                                    /p:UseWPP_CopyWebApplication=true \\
-                                                    /p:PipelineDependsOnBuild=false
-                                            """
-                                        }
+                                    if (-not \$profile) {
+                                        Write-Error "❌ No se encontró un perfil válido"
+                                        exit 1
                                     }
-                                    apisExitosas << api
-                                } catch (err) {
-                                    echo "❌ Error en ${api}: ${err}"
-                                    apisFallidas << api
-                                }
+
+                                    # Publicar directamente, igual que Visual Studio
+                                    \$publishArgs = @(
+                                        'publish',
+                                        '${api}.csproj',
+                                        '--configuration', "\${env:CONFIGURATION}",
+                                        '--output', './publish',
+                                        '/p:WebPublishMethod=MSDeploy',
+                                        '/p:MsDeployServiceUrl="' + \$profile.publishUrl + '"',
+                                        '/p:DeployIisAppPath="' + \$profile.msdeploySite + '"',
+                                        '/p:UserName="' + \$profile.userName + '"',
+                                        '/p:Password="' + \$profile.userPWD + '"',
+                                        '/p:AllowUntrustedCertificate=true',
+                                        '/p:PrecompileBeforePublish=true',
+                                        '/p:EnableMSDeployAppOffline=true',
+                                        '/p:UseWPP_CopyWebApplication=true',
+                                        '/p:PipelineDependsOnBuild=false'
+                                    )
+
+                                    Write-Host "Ejecutando: dotnet \$publishArgs"
+                                    & dotnet @publishArgs
+                                    
+                                    if (\$LASTEXITCODE -ne 0) {
+                                        Write-Error "❌ Error en la publicación de ${api}"
+                                        exit 1
+                                    }
+                                    
+                                    Write-Host "✅ ${api} publicado exitosamente"
+                                """
                             }
                         }
+                        apisExitosas << api
+                    } catch (err) {
+                        echo "❌ Error en ${api}: ${err}"
+                        apisFallidas << api
                     }
                 }
             }
+        }
+    }
+}
         }
 
         post {
