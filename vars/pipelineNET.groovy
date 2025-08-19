@@ -56,8 +56,8 @@ def call(Map config) {
 
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                            powershell """
-                                               # Forzar TLS 1.2 y detener ejecución en errores
+                                           powershell '''
+                                                # Forzar TLS 1.2 y detener ejecución en errores
                                                 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                                                 $ErrorActionPreference = "Stop"
 
@@ -81,13 +81,12 @@ def call(Map config) {
                                                 # Publicar con dotnet publish
                                                 dotnet publish . `
                                                     --configuration Release `
-                                                    --output "${BUILD_FOLDER}/publish/${api}" `
+                                                    --output "'${BUILD_FOLDER}'/publish/'${api}'" `
                                                     /p:PublishProfile="$env:PUBLISH_SETTINGS" `
                                                     /p:AllowUntrustedCertificate=true
 
-                                                Write-Host "🏗 Publicación completada para ${api}"
-
-                                            """
+                                                Write-Host "🏗 Publicación completada para '${api}'"
+                                            '''
                                         }
                                     }
 
@@ -101,6 +100,7 @@ def call(Map config) {
                     }
                 }
             }
+
         }
 
         post {
