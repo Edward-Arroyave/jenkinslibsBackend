@@ -69,16 +69,16 @@ def call(Map config) {
 
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                            powershell """
+                                           powershell """
                                                 # Forzar TLS 1.2
                                                 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
                                                 
                                                 Write-Host "📄 Publicando ${api}..."
                                                 
+                                                # Solo restaurar y publicar directamente
                                                 dotnet restore ${api}.csproj
-                                                dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
                                                 
-                                                Write-Host "📄 Leyendo perfil de publicación..."
+                                                Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
                                                 [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
                                                 \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
@@ -91,19 +91,22 @@ def call(Map config) {
                                                 \$user = \$profile.userName
                                                 \$pass = \$profile.userPWD
                                                 \$site = \$profile.msdeploySite
+                                                \$publishUrl = \$profile.publishUrl
 
-                                                # Publicar usando dotnet publish
+                                                # Publicar usando dotnet publish directamente
                                                 dotnet publish ${api}.csproj `
                                                     --configuration ${env.CONFIGURATION} `
-                                                    --output ./publish `
+                                                    --output ./publish-output `
+                                                    /p:PublishProfile="Azure" `
                                                     /p:DeployOnBuild=true `
                                                     /p:WebPublishMethod=MSDeploy `
-                                                    /p:MsDeployServiceUrl="\$(\$profile.publishUrl)" `
+                                                    /p:MsDeployServiceUrl="\$publishUrl" `
                                                     /p:DeployIisAppPath="\$site" `
-                                                    /p:UserName="\$user" `
+                                                    /p:Username="\$user" `
                                                     /p:Password="\$pass" `
                                                     /p:AllowUntrustedCertificate=true `
-                                                    /p:MSDeployUseLegacyProvider=true
+                                                    /p:SkipExtraFilesOnServer=true `
+                                                    /p:EnableMSDeployAppOffline=true
                                             """
                                         }
                                     }
