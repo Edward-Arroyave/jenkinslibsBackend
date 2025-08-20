@@ -63,21 +63,25 @@ def call(Map config) {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
+                                                # Fuerza TLS 1.2
                                                 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+                                                # Cargar el archivo .publishsettings
                                                 [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
                                                 \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
                                                 if (-not \$profile) { Write-Error "❌ No se encontró perfil MSDeploy"; exit 1 }
 
+                                                # Tomar datos de publicación
                                                 \$url  = \$profile.publishUrl
-                                                if (\$url -like "http://*") { \$url = \$url -replace "http://", "https://" }
-
                                                 \$site = \$profile.msdeploySite
                                                 \$user = \$profile.userName
                                                 \$pass = \$profile.userPWD
+
+                                                # Carpeta de proyecto a publicar (igual que VS)
                                                 \$projectFolder = (Get-ChildItem -Directory | Select-Object -First 1).FullName
 
+                                                # URL completa para MSDeploy
                                                 \$msdeployUrl = "\$url/msdeploy.axd?site=\$site"
 
                                                 Write-Host "🔄 Restaurando paquetes NuGet..."
@@ -88,10 +92,12 @@ def call(Map config) {
                                                     -verb:sync `
                                                     -source:contentPath="\$projectFolder" `
                                                     -dest:contentPath="\$site",computerName="\$msdeployUrl",userName="\$user",password="\$pass",authType="Basic" `
-                                                    -allowUntrusted
+                                                    -allowUntrusted `
+                                                    -enableRule:DoNotDeleteRule  # Para no eliminar archivos existentes como VS
                                             """
                                         }
                                     }
+
 
                                     apisExitosas << api
                                 } catch (err) {
