@@ -65,7 +65,6 @@ def call(Map config) {
                                             powershell """
                                                 Write-Host "📄 Restaurando y compilando ${api}..."
 
-                                               
                                                 dotnet restore ${api}.csproj
                                                 dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
                                                 
@@ -84,9 +83,9 @@ def call(Map config) {
                                                 \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
                                                 if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
 
-                                                Write-Host "🏗 Publicando proyecto: \$projectFile"
+                                                Write-Host "🏗 Publicando proyecto con MSBuild de Visual Studio: \$projectFile"
 
-                                                dotnet msbuild "\$projectFile" `
+                                                "C:\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe" "\$projectFile" `
                                                     /p:DeployOnBuild=true `
                                                     /p:WebPublishMethod=MSDeploy `
                                                     /p:MsDeployServiceUrl="\$url" `
@@ -98,6 +97,7 @@ def call(Map config) {
                                             """
                                         }
                                     }
+
                                     apisExitosas << api
                                 } catch (err) {
                                     echo "❌ Error en ${api}: ${err}"
