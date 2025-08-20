@@ -11,7 +11,7 @@ def call(Map config) {
 
     pipeline {
         agent {
-            label 'Windows-node'
+            label 'Windws-node'
         }
 
         environment {
