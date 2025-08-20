@@ -42,11 +42,11 @@ return [
             REPO_PATH: "${env.REPO_PATH}/API_HIS/ApiElectronicInvoice",
             CREDENCIALES: [
                 demo: "PROFILE_HIS_ApiElectronicInvoice_DEMO",
-                test: ""
+                test: "PROFILE_HIS_ApiElectronicInvoice_TEST"
             ],
             URL: [
                 demo: "https://his-backend-electronici-demo-f4epgjasdmcbaya9.eastus2-01.azurewebsites.net",
-                test: ""
+                test: "https://his-backend-electronici-pruebas-b0asd6dwf8ajexbp.eastus2-01.azurewebsites.net"
             ]
         ],
         "Schedule.Api": [
@@ -67,8 +67,41 @@ return [
                 test: "PROFILE_HIS_ApiInteroperability_TEST"
             ],
             URL: [
-                demo: "https://his-backend-app-annar-demo-d7dfdve9c0bzc8fy.eastuhttpss2-01.azurewebsites.net",
+                demo: "https://his-backend-interoperab-demo-fabhf0dgb8e4fng0.eastus2-01.azurewebsites.net",
                 test: "https://his-backend-interoperab-pruebas-e7c0frh8d3fzamdx.eastus2-01.azurewebsites.net"
+            ]
+        ],
+        "Invoice.Api": [
+            REPO_PATH: "${env.REPO_PATH}/API_HIS/Invoice.Api",
+            CREDENCIALES: [
+                demo: "PROFILE_HIS_Invoice.Api_DEMO",
+                test: "PROFILE_HIS_Invoice.Api_TEST"
+            ],
+            URL: [
+                demo: "https://his-backend-invoice-ann-demo-fhcgevbbgdfkc0cr.eastus2-01.azurewebsites.net",
+                test: "https://his-backend-invoice-ann-pruebas-bpfbdyaybze7deb5.eastus2-01.azurewebsites.net"
+            ]
+        ],
+        ApiPatient: [
+            REPO_PATH: "${env.REPO_PATH}/API_HIS/ApiPatient",
+            CREDENCIALES: [
+                demo: "PROFILE_HIS_ApiPatient_DEMO",
+                test: "PROFILE_HIS_ApiPatient_TEST"
+            ],
+            URL: [
+                demo: "https://his-backend-pacientes-a-demo-bkgkexcdamgbb0a7.eastus2-01.azurewebsites.net",
+                test: "https://his-backend-pacientes-a-test-azakd3d0g9ctavcj.eastus2-01.azurewebsites.net"
+            ]
+        ],
+        ApiTask: [
+            REPO_PATH: "${env.REPO_PATH}/API_HIS/ApiPatient",
+            CREDENCIALES: [
+                demo: "PROFILE_HIS_ApiTaskt_DEMO",
+                test: "PROFILE_HIS_ApiTask_TEST"
+            ],
+            URL: [
+                demo: "https://his-backend-task-annar-demo-dmfeajbvd6ecebed.eastus2-01.azurewebsites.net",
+                test: "https://his-backend-task-annar-pruebas-gzgdgsedevehbmff.eastus2-01.azurewebsites.net"
             ]
         ]
     ]
