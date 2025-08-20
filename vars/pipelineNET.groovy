@@ -64,28 +64,29 @@ def call(Map config) {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell '''\
                                                 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-                                                # Buscar el perfil MSDeploy
                                                 [xml]$pub = Get-Content "$env:PUBLISH_SETTINGS"
                                                 $profile = $pub.publishData.publishProfile | Where-Object { $_.publishMethod -eq "MSDeploy" }
 
                                                 if (-not $profile) { Write-Error "❌ No se encontró perfil MSDeploy"; exit 1 }
 
                                                 $url  = $profile.publishUrl
+                                                if ($url -like "http://*") { $url = $url -replace "http://", "https://" }
+
                                                 $site = $profile.msdeploySite
                                                 $user = $profile.userName
                                                 $pass = $profile.userPWD
-                                                $projectFolder = (Get-ChildItem -Directory | Select-Object -First 1).FullName  # Carpeta del proyecto
+                                                $projectFolder = (Get-ChildItem -Directory | Select-Object -First 1).FullName
+
+                                                $msdeployUrl = "$url/msdeploy.axd?site=$site"
 
                                                 Write-Host "🔄 Restaurando paquetes NuGet..."
                                                 dotnet restore
 
                                                 Write-Host "🚀 Publicando ${api} usando Web Deploy..."
-
-                                                &  "C:\\Program Files\\IIS\\Microsoft Web Deploy V3\\msdeploy.exe" \
-                                                    -verb:sync \
-                                                    -source:contentPath="$projectFolder" \
-                                                    -dest:contentPath="$site",computerName="$url",userName="$user",password="$pass",authType="Basic" \
+                                                & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" `
+                                                    -verb:sync `
+                                                    -source:contentPath="$projectFolder" `
+                                                    -dest:contentPath="$site",computerName="$msdeployUrl",userName="$user",password="$pass",authType="Basic" `
                                                     -allowUntrusted
                                                 '''
                                         }
