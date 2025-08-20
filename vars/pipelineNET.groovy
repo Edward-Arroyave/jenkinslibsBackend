@@ -60,29 +60,24 @@ def call(Map config) {
                                     echo "Credenciales usadas: ${apiConfig.CREDENTIALS_ID}"
                                     echo "URL de despliegue: ${apiConfig.URL}"
 
-                                    dir("${apiConfig.CS_PROJ_PATH}") {
+                                   dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                           powershell """
-                                                # Forzar TLS 1.2
+                                            powershell """
                                                 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-                                                # Agregar MSDeploy al PATH de la sesión
-                                                \$env:PATH += ";C:\\Program Files\\IIS\\Microsoft Web Deploy V3"
-
-                                                Write-Host "📄 Restaurando y compilando ${api}..."
-                                                dotnet restore ${api}.csproj
-                                                dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
-
-                                                # Publicación con MSDeploy
+                                                # Buscar el perfil MSDeploy
                                                 [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
                                                 \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
-                                                if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
+
+                                                if (-not \$profile) { Write-Error "❌ No se encontró perfil MSDeploy"; exit 1 }
 
                                                 \$url  = \$profile.publishUrl
                                                 \$site = \$profile.msdeploySite
                                                 \$user = \$profile.userName
                                                 \$pass = \$profile.userPWD
                                                 \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+
+                                                Write-Host "🚀 Publicando ${api} usando perfil MSDeploy..."
                                                 dotnet msbuild "\$projectFile" `
                                                     /p:DeployOnBuild=true `
                                                     /p:WebPublishMethod=MSDeploy `
@@ -90,12 +85,12 @@ def call(Map config) {
                                                     /p:DeployIisAppPath="\$site" `
                                                     /p:UserName="\$user" `
                                                     /p:Password="\$pass" `
-                                                    /p:Configuration=${CONFIGURATION} `
+                                                    /p:Configuration=Release `
                                                     /p:AllowUntrustedCertificate=true
-                                                """
-
+                                            """
                                         }
                                     }
+
                                     apisExitosas << api
                                 } catch (err) {
                                     echo "❌ Error en ${api}: ${err}"
