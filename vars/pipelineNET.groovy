@@ -63,13 +63,6 @@ def call(Map config) {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                            powershell """
-                                            # ESTABLECER PROTOCOLO SEGURO PARA POWERSHELL Y .NET
-                                            [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-
-                                            # ESTAS VARIABLES DE ENTORNO SON CRÍTICAS PARA .NET FRAMEWORK (MSBuild)
-                                            # Fuerzan el uso de TLS 1.2 a nivel de runtime de .NET
-                                            \$env:SSL_CIPHER_LIST = 'TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA'
-                                            \$env:MSBUILD_TLS_VERIFY = '1'
 
                                             Write-Host "🔐 Versión de Protocolo de Seguridad configurada: \$([System.Net.ServicePointManager]::SecurityProtocol)"
                                             
