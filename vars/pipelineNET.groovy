@@ -62,29 +62,27 @@ def call(Map config) {
 
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                            powershell """
-                                                Write-Host "📄 Restaurando y compilando ${api}..."
+                                           powershell """
+                                                # Forzar TLS 1.2
+                                                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+                                                # Agregar MSDeploy al PATH de la sesión
+                                                \$env:PATH += ";C:\\Program Files\\IIS\\Microsoft Web Deploy V3"
+
+                                                Write-Host "📄 Restaurando y compilando ${api}..."
                                                 dotnet restore ${api}.csproj
                                                 dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
-                                                
-                                                Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
+
+                                                # Publicación con MSDeploy
                                                 [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
                                                 \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
-
                                                 if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
 
-                                                Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
                                                 \$url  = \$profile.publishUrl
                                                 \$site = \$profile.msdeploySite
                                                 \$user = \$profile.userName
                                                 \$pass = \$profile.userPWD
-
                                                 \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
-                                                if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
-
-                                                Write-Host "🏗 Publicando proyecto: \$projectFile"
-
                                                 dotnet msbuild "\$projectFile" `
                                                     /p:DeployOnBuild=true `
                                                     /p:WebPublishMethod=MSDeploy `
@@ -94,7 +92,8 @@ def call(Map config) {
                                                     /p:Password="\$pass" `
                                                     /p:Configuration=${CONFIGURATION} `
                                                     /p:AllowUntrustedCertificate=true
-                                            """
+                                                """
+
                                         }
                                     }
                                     apisExitosas << api
