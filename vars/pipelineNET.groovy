@@ -64,7 +64,7 @@ def call(Map config) {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
                                                 Write-Host "📄 Restaurando y compilando ${api}..."
-                                                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                                                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls
                                                 dotnet restore ${api}.csproj
                                                 dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
                                                 
