@@ -62,7 +62,7 @@ def call(Map config) {
 
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                            powershell """
+                                            powershell $/
                                                 Write-Host "📄 Restaurando y compilando ${api}..."
 
                                                 dotnet restore ${api}.csproj
@@ -85,8 +85,7 @@ def call(Map config) {
 
                                                 Write-Host "🏗 Publicando proyecto con MSBuild de Visual Studio: `$projectFile"
 
-                                                # Use proper escaping for the MSBuild command
-                                                & "C:\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe" "`$projectFile" `
+                                                & "C:\BuildTools\MSBuild\Current\Bin\MSBuild.exe" "`$projectFile" `
                                                     /p:DeployOnBuild=true `
                                                     /p:WebPublishMethod=MSDeploy `
                                                     /p:MsDeployServiceUrl="`$url" `
@@ -95,7 +94,7 @@ def call(Map config) {
                                                     /p:Password="`$pass" `
                                                     /p:Configuration=${CONFIGURATION} `
                                                     /p:AllowUntrustedCertificate=true
-                                            """
+                                            /$
                                         }
                                     }
 
