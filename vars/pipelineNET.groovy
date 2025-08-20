@@ -63,37 +63,30 @@ def call(Map config) {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
-                                                Write-Host "📄 Restaurando y compilando ${api}..."
+                                                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                                                [xml]$pub = Get-Content "$env:PUBLISH_SETTINGS"
+                                                $profile = $pub.publishData.publishProfile | Where-Object { $_.publishMethod -eq "MSDeploy" }
 
-                                                dotnet restore ${api}.csproj
-                                                dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
-                                                
-                                                Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
-                                                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                                                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+                                                $url  = $profile.publishUrl -replace "^http://", "https://"
+                                                $site = $profile.msdeploySite
+                                                $user = $profile.userName
+                                                $pass = $profile.userPWD
 
-                                                if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
+                                                $publishFolder = Join-Path $env:WORKSPACE "publish_${api}"
+                                                dotnet restore
+                                                dotnet publish -c Release -o $publishFolder
 
-                                                Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
-                                                \$url  = \$profile.publishUrl
-                                                \$site = \$profile.msdeploySite
-                                                \$user = \$profile.userName
-                                                \$pass = \$profile.userPWD
+                                                $zipPath = Join-Path $env:WORKSPACE "${api}.zip"
+                                                if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+                                                Add-Type -AssemblyName 'System.IO.Compression.FileSystem'
+                                                [System.IO.Compression.ZipFile]::CreateFromDirectory($publishFolder, $zipPath)
 
-                                                \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
-                                                if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
+                                                & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" `
+                                                    -verb:sync `
+                                                    -source:package="$zipPath" `
+                                                    -dest:contentPath="$site",computerName="$url/msdeploy.axd?site=$site",userName="$user",password="$pass",authType="Basic" `
+                                                    -allowUntrusted
 
-                                                Write-Host "🏗 Publicando proyecto: \$projectFile"
-
-                                                dotnet msbuild "\$projectFile" `
-                                                    /p:DeployOnBuild=true `
-                                                    /p:WebPublishMethod=MSDeploy `
-                                                    /p:MsDeployServiceUrl="\$url" `
-                                                    /p:DeployIisAppPath="\$site" `
-                                                    /p:UserName="\$user" `
-                                                    /p:Password="\$pass" `
-                                                    /p:Configuration=${CONFIGURATION} `
-                                                    /p:AllowUntrustedCertificate=true
                                             """
                                         }
                                     }
