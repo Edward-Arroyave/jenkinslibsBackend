@@ -62,41 +62,49 @@ def call(Map config) {
 
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                            powershell """
-                                                Write-Host "📄 Restaurando y compilando ${api}..."
-                                                [System.Net.ServicePointManager]::SecurityProtocol
-                                                [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls13
-                                                [System.Net.ServicePointManager]::SecurityProtocol
-                                                dotnet restore ${api}.csproj
-                                                dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
-                                                
-                                                Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
-                                                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                                                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+                                           powershell """
+                                            # ESTABLECER PROTOCOLO SEGURO PARA POWERSHELL Y .NET
+                                            [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 
-                                                if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
+                                            # ESTAS VARIABLES DE ENTORNO SON CRÍTICAS PARA .NET FRAMEWORK (MSBuild)
+                                            # Fuerzan el uso de TLS 1.2 a nivel de runtime de .NET
+                                            \$env:SSL_CIPHER_LIST = 'TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA'
+                                            \$env:MSBUILD_TLS_VERIFY = '1'
 
-                                                Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
-                                                \$url  = \$profile.publishUrl
-                                                \$site = \$profile.msdeploySite
-                                                \$user = \$profile.userName
-                                                \$pass = \$profile.userPWD
+                                            Write-Host "🔐 Versión de Protocolo de Seguridad configurada: \$([System.Net.ServicePointManager]::SecurityProtocol)"
+                                            
+                                            Write-Host "📄 Restaurando y compilando ${api}..."
+                                            dotnet restore ${api}.csproj
+                                            dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
+                                            
+                                            Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
+                                            [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                                            \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                                                \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
-                                                if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
+                                            if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
 
-                                                Write-Host "🏗 Publicando proyecto: \$projectFile"
+                                            Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
+                                            \$url  = \$profile.publishUrl
+                                            \$site = \$profile.msdeploySite
+                                            \$user = \$profile.userName
+                                            \$pass = \$profile.userPWD
 
-                                                dotnet msbuild "\$projectFile" `
-                                                    /p:DeployOnBuild=true `
-                                                    /p:WebPublishMethod=MSDeploy `
-                                                    /p:MsDeployServiceUrl="\$url" `
-                                                    /p:DeployIisAppPath="\$site" `
-                                                    /p:UserName="\$user" `
-                                                    /p:Password="\$pass" `
-                                                    /p:Configuration=${CONFIGURATION} `
-                                                    /p:AllowUntrustedCertificate=true
-                                            """
+                                            \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                                            if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
+
+                                            Write-Host "🏗 Publicando proyecto: \$projectFile"
+
+                                            # Ejecuta msbuild con las variables de entorno configuradas
+                                            dotnet msbuild "\$projectFile" `
+                                                /p:DeployOnBuild=true `
+                                                /p:WebPublishMethod=MSDeploy `
+                                                /p:MsDeployServiceUrl="\$url" `
+                                                /p:DeployIisAppPath="\$site" `
+                                                /p:UserName="\$user" `
+                                                /p:Password="\$pass" `
+                                                /p:Configuration=${CONFIGURATION} `
+                                                /p:AllowUntrustedCertificate=true
+                                        """
                                         }
                                     }
                                     apisExitosas << api
