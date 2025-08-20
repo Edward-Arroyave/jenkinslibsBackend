@@ -35,12 +35,13 @@ def call(Map config) {
 
                         cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
 
+                        // Guardamos configCompleto para el resto
                         env.CONFIG_COMPLETO = groovy.json.JsonOutput.toJson(configCompleto)
                     }
                 }
             }
 
-            stage('Deploy APIs via MSDeploy') {
+            stage('Deploy APIs') {
                 steps {
                     script {
                         def configCompleto = new groovy.json.JsonSlurperClassic().parseText(env.CONFIG_COMPLETO)
@@ -62,45 +63,40 @@ def call(Map config) {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
-                                                # TLS 1.2
-                                                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                                                Write-Host "📄 Restaurando y compilando ${api}..."
 
-                                                # Leer el perfil MSDeploy
+                                                dotnet restore ${api}.csproj
+                                                dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
+                                                
+                                                Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
                                                 [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
                                                 \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                                                if (-not \$profile) { Write-Error "❌ No se encontró perfil MSDeploy"; exit 1 }
+                                                if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
 
+                                                Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
                                                 \$url  = \$profile.publishUrl
-                                                # Forzar HTTPS
-                                                if (\$url -like "http://*") { \$url = \$url -replace "http://", "https://" }
-
                                                 \$site = \$profile.msdeploySite
                                                 \$user = \$profile.userName
                                                 \$pass = \$profile.userPWD
 
-                                                # Carpeta del proyecto
-                                                \$projectFolder = (Get-ChildItem -Directory | Select-Object -First 1).FullName
-                                                \$msdeployUrl = "\$url/msdeploy.axd?site=\$site"
+                                                \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                                                if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
 
-                                                # Restaurar y compilar
-                                                Write-Host "🔄 Restaurando paquetes NuGet..."
-                                                dotnet restore
-                                                Write-Host "🔨 Publicando proyecto..."
-                                                dotnet publish -c Release -o published
+                                                Write-Host "🏗 Publicando proyecto: \$projectFile"
 
-                                                # Ejecutar MSDeploy
-                                                Write-Host "🚀 Desplegando ${api} con MSDeploy..."
-                                                & "C:\\Program Files\\IIS\\Microsoft Web Deploy V3\\msdeploy.exe" `
-                                                    -verb:sync `
-                                                    -source:contentPath="published" `
-                                                    -dest:contentPath="\$site",computerName="\$msdeployUrl",userName="\$user",password="\$pass",authType="Basic" `
-                                                    -allowUntrusted
-
+                                                dotnet msbuild "\$projectFile" `
+                                                    /p:DeployOnBuild=true `
+                                                    /p:WebPublishMethod=MSDeploy `
+                                                    /p:MsDeployServiceUrl="\$url" `
+                                                    /p:DeployIisAppPath="\$site" `
+                                                    /p:UserName="\$user" `
+                                                    /p:Password="\$pass" `
+                                                    /p:Configuration=${CONFIGURATION} `
+                                                    /p:AllowUntrustedCertificate=true
                                             """
                                         }
                                     }
-
                                     apisExitosas << api
                                 } catch (err) {
                                     echo "❌ Error en ${api}: ${err}"
@@ -119,7 +115,7 @@ def call(Map config) {
                     def APIS_FAILURE = ""
                     def APIS_SUCCESSFUL = ""
                     if (apisExitosas) { APIS_SUCCESSFUL += "✅ ${apisExitosas.join(', ')}\n" }
-                    if (apisFallidas) { APIS_FAILURE += "❌ ${apisFallidas.join(', ')}" }
+                    if (apisFallidas) { APIS_FAILURE    += "❌ ${apisFallidas.join(', ')}" }
 
                     sendNotificationTeamsNET([
                         APIS_SUCCESSFUL: APIS_SUCCESSFUL,
