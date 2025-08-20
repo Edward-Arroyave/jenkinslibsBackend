@@ -63,33 +63,30 @@ def call(Map config) {
                                    dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
-                                               [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                                             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
                                                 # Buscar el perfil MSDeploy
-                                                [xml]$pub = Get-Content "$env:PUBLISH_SETTINGS"
-                                                $profile = $pub.publishData.publishProfile | Where-Object { $_.publishMethod -eq "MSDeploy" }
+                                                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                                                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                                                if (-not $profile) { Write-Error "❌ No se encontró perfil MSDeploy"; exit 1 }
+                                                if (-not \$profile) { Write-Error "❌ No se encontró perfil MSDeploy"; exit 1 }
 
-                                                $url  = $profile.publishUrl
-                                                $site = $profile.msdeploySite
-                                                $user = $profile.userName
-                                                $pass = $profile.userPWD
-                                                $projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                                                \$url  = \$profile.publishUrl
+                                                \$site = \$profile.msdeploySite
+                                                \$user = \$profile.userName
+                                                \$pass = \$profile.userPWD
+                                                \$projectFolder = (Get-ChildItem -Directory | Select-Object -First 1).FullName  # Carpeta del proyecto
 
                                                 Write-Host "🔄 Restaurando paquetes NuGet..."
-                                                dotnet restore $projectFile
+                                                dotnet restore
 
-                                                Write-Host "🚀 Publicando ${api} usando perfil MSDeploy..."
-                                                dotnet msbuild "$projectFile" `
-                                                    /p:DeployOnBuild=true `
-                                                    /p:WebPublishMethod=MSDeploy `
-                                                    /p:MsDeployServiceUrl="$url" `
-                                                    /p:DeployIisAppPath="$site" `
-                                                    /p:UserName="$user" `
-                                                    /p:Password="$pass" `
-                                                    /p:Configuration=Release `
-                                                    /p:AllowUntrustedCertificate=true
+                                                Write-Host "🚀 Publicando ${api} usando Web Deploy..."
 
+                                                & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" `
+                                                    -verb:sync `
+                                                    -source:contentPath="\$projectFolder" `
+                                                    -dest:contentPath="\$site",computerName="\$url",userName="\$user",password="\$pass",authType="Basic" `
+                                                    -allowUntrusted
                                             """
                                         }
                                     }
