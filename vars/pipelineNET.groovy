@@ -20,8 +20,6 @@ def call(Map config) {
             REPO_URL = "${config.REPO_URL}"
             CONFIGURATION = 'Release'
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
-            // Forzar uso de TLS 1.2 a nivel de proceso Jenkins
-            JAVA_TOOL_OPTIONS = "-Dhttps.protocols=TLSv1.2 -Djdk.tls.client.protocols=TLSv1.2"
         }
 
         stages {
@@ -66,41 +64,35 @@ def call(Map config) {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
                                                 Write-Host "📄 Restaurando y compilando ${api}..."
-                                                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
                                                 dotnet restore ${api}.csproj
                                                 dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
+                                                
+                                                Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
+                                                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                                                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                                                Write-Host "📄 Leyendo perfil de publicación desde: $env:PUBLISH_SETTINGS"
-                                                [xml]$pub = Get-Content "$env:PUBLISH_SETTINGS"
-                                                $profile = $pub.publishData.publishProfile | Where-Object { $_.publishMethod -eq "MSDeploy" }
+                                                if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
 
-                                                if (-not $profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
+                                                Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
+                                                \$url  = \$profile.publishUrl
+                                                \$site = \$profile.msdeploySite
+                                                \$user = \$profile.userName
+                                                \$pass = \$profile.userPWD
 
-                                                Write-Host "🔑 Usando perfil: $($profile.profileName)"
-                                                $url  = $profile.publishUrl
-                                                $site = $profile.msdeploySite
-                                                $user = $profile.userName
-                                                $pass = $profile.userPWD
+                                                \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                                                if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
 
-                                                Write-Host "URL: $url"
-                                                Write-Host "Site: $site"
-                                                Write-Host "User: $user"
+                                                Write-Host "🏗 Publicando proyecto: \$projectFile"
 
-                                                $projectFile = (Get-ChildItem -Filter "*.csproj").FullName
-                                                if (-not $projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
-
-                                                Write-Host "🏗 Publicando proyecto: $projectFile"
-
-                                                dotnet msbuild "$projectFile" `
+                                                dotnet msbuild "\$projectFile" `
                                                     /p:DeployOnBuild=true `
                                                     /p:WebPublishMethod=MSDeploy `
-                                                    /p:MsDeployServiceUrl="$url" `
-                                                    /p:DeployIisAppPath="$site" `
-                                                    /p:UserName="$user" `
-                                                    /p:Password="$pass" `
+                                                    /p:MsDeployServiceUrl="\$url" `
+                                                    /p:DeployIisAppPath="\$site" `
+                                                    /p:UserName="\$user" `
+                                                    /p:Password="\$pass" `
                                                     /p:Configuration=${CONFIGURATION} `
-                                                    /p:AllowUntrustedCertificate=true `
-                                                    /v:diag
+                                                    /p:AllowUntrustedCertificate=true
                                             """
                                         }
                                     }
@@ -108,7 +100,6 @@ def call(Map config) {
                                 } catch (err) {
                                     echo "❌ Error en ${api}: ${err}"
                                     apisFallidas << api
-                                    // Continuar con las siguientes APIs en lugar de fallar completamente
                                 }
                             }
                         }
