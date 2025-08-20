@@ -49,6 +49,17 @@ return [
                 test: "https://his-backend-electronici-pruebas-b0asd6dwf8ajexbp.eastus2-01.azurewebsites.net"
             ]
         ],
+        "Financial.Api": [
+            REPO_PATH: "${env.REPO_PATH}/API_HIS/Financial.Api",
+            CREDENCIALES: [
+                demo: "PROFILE_HIS_Financial.Api_DEMO",
+                test: "PROFILE_HIS_Financial.Api_TEST"
+            ],
+            URL: [
+                demo: "https://his-backend-electronici-demo-f4epgjasdmcbaya9.eastus2-01.azurewebsites.net",
+                test: "https://his-backend-fincanciera-pruebas-aeemf9fng6caa9gr.eastus2-01.azurewebsites.net"
+            ]
+        ],
         "Schedule.Api": [
             REPO_PATH: "${env.REPO_PATH}/API_HIS/Schedule.Api",
             CREDENCIALES: [
