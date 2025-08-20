@@ -65,57 +65,42 @@ def call(Map config) {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
-                                                # Configuración robusta de TLS
-                                                [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-                                                \$ProgressPreference = 'SilentlyContinue'
-
                                                 Write-Host "📄 Restaurando y compilando ${api}..."
-                                                
-                                                # Limpiar, restaurar y compilar
-                                                dotnet clean ${api}.csproj --configuration ${env.CONFIGURATION}
-                                                dotnet restore ${api}.csproj --force --interactive
+                                                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
+                                                dotnet restore ${api}.csproj
                                                 dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
-                                                
-                                                Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
-                                                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                                                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                                                if (-not \$profile) { 
-                                                    Write-Error "❌ No se encontró un perfil válido" 
-                                                    exit 1 
-                                                }
+                                                Write-Host "📄 Leyendo perfil de publicación desde: $env:PUBLISH_SETTINGS"
+                                                [xml]$pub = Get-Content "$env:PUBLISH_SETTINGS"
+                                                $profile = $pub.publishData.publishProfile | Where-Object { $_.publishMethod -eq "MSDeploy" }
 
-                                                Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
-                                                \$url  = \$profile.publishUrl
-                                                \$site = \$profile.msdeploySite
-                                                \$user = \$profile.userName
-                                                \$pass = \$profile.userPWD
+                                                if (-not $profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
 
-                                                \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
-                                                if (-not \$projectFile) { 
-                                                    Write-Error "❌ No se encontró el archivo .csproj" 
-                                                    exit 1 
-                                                }
+                                                Write-Host "🔑 Usando perfil: $($profile.profileName)"
+                                                $url  = $profile.publishUrl
+                                                $site = $profile.msdeploySite
+                                                $user = $profile.userName
+                                                $pass = $profile.userPWD
 
-                                                Write-Host "🏗 Publicando proyecto: \$projectFile"
+                                                Write-Host "URL: $url"
+                                                Write-Host "Site: $site"
+                                                Write-Host "User: $user"
 
-                                                # Publicar usando MSBuild con configuración robusta de TLS
-                                                dotnet msbuild "\$projectFile" `
+                                                $projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                                                if (-not $projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
+
+                                                Write-Host "🏗 Publicando proyecto: $projectFile"
+
+                                                dotnet msbuild "$projectFile" `
                                                     /p:DeployOnBuild=true `
-                                                    /p:PublishProfile="\$env:PUBLISH_SETTINGS" `
                                                     /p:WebPublishMethod=MSDeploy `
-                                                    /p:MsDeployServiceUrl="\$url" `
-                                                    /p:DeployIisAppPath="\$site" `
-                                                    /p:UserName="\$user" `
-                                                    /p:Password="\$pass" `
-                                                    /p:Configuration=${env.CONFIGURATION} `
+                                                    /p:MsDeployServiceUrl="$url" `
+                                                    /p:DeployIisAppPath="$site" `
+                                                    /p:UserName="$user" `
+                                                    /p:Password="$pass" `
+                                                    /p:Configuration=${CONFIGURATION} `
                                                     /p:AllowUntrustedCertificate=true `
-                                                    /p:MSDeployUseTls12=true `
-                                                    /p:AuthType=Basic `
-                                                    /p:SkipExtraFilesOnServer=true `
-                                                    /p:EnableMSDeployAppOffline=true `
-                                                    /p:MSDeployPackageLocation=".\obj\\${env.CONFIGURATION}\\Package" `
-                                                    /verbosity:detailed
+                                                    /v:diag
                                             """
                                         }
                                     }
