@@ -60,7 +60,7 @@ def call(Map config) {
                                     echo "Credenciales usadas: ${apiConfig.CREDENTIALS_ID}"
                                     echo "URL de despliegue: ${apiConfig.URL}"
 
-                                   dir("${apiConfig.CS_PROJ_PATH}") {
+                                    dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
                                                 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -91,9 +91,6 @@ def call(Map config) {
                                                     -allowUntrusted
                                             """
                                         }
-                                    }
-
-                                      
                                     }
 
                                     apisExitosas << api
