@@ -20,6 +20,8 @@ def call(Map config) {
             REPO_URL = "${config.REPO_URL}"
             CONFIGURATION = 'Release'
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
+            // Forzar uso de TLS 1.2 a nivel de proceso Jenkins
+            JAVA_TOOL_OPTIONS = "-Dhttps.protocols=TLSv1.2 -Djdk.tls.client.protocols=TLSv1.2"
         }
 
         stages {
@@ -63,16 +65,25 @@ def call(Map config) {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
+                                                # Configuración robusta de TLS
+                                                [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+                                                \$ProgressPreference = 'SilentlyContinue'
+
                                                 Write-Host "📄 Restaurando y compilando ${api}..."
-                                                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls
-                                                dotnet restore ${api}.csproj
+                                                
+                                                # Limpiar, restaurar y compilar
+                                                dotnet clean ${api}.csproj --configuration ${env.CONFIGURATION}
+                                                dotnet restore ${api}.csproj --force --interactive
                                                 dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
                                                 
                                                 Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
                                                 [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
                                                 \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                                                if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
+                                                if (-not \$profile) { 
+                                                    Write-Error "❌ No se encontró un perfil válido" 
+                                                    exit 1 
+                                                }
 
                                                 Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
                                                 \$url  = \$profile.publishUrl
@@ -81,19 +92,30 @@ def call(Map config) {
                                                 \$pass = \$profile.userPWD
 
                                                 \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
-                                                if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
+                                                if (-not \$projectFile) { 
+                                                    Write-Error "❌ No se encontró el archivo .csproj" 
+                                                    exit 1 
+                                                }
 
                                                 Write-Host "🏗 Publicando proyecto: \$projectFile"
 
+                                                # Publicar usando MSBuild con configuración robusta de TLS
                                                 dotnet msbuild "\$projectFile" `
                                                     /p:DeployOnBuild=true `
+                                                    /p:PublishProfile="\$env:PUBLISH_SETTINGS" `
                                                     /p:WebPublishMethod=MSDeploy `
                                                     /p:MsDeployServiceUrl="\$url" `
                                                     /p:DeployIisAppPath="\$site" `
                                                     /p:UserName="\$user" `
                                                     /p:Password="\$pass" `
-                                                    /p:Configuration=${CONFIGURATION} `
-                                                    /p:AllowUntrustedCertificate=true
+                                                    /p:Configuration=${env.CONFIGURATION} `
+                                                    /p:AllowUntrustedCertificate=true `
+                                                    /p:MSDeployUseTls12=true `
+                                                    /p:AuthType=Basic `
+                                                    /p:SkipExtraFilesOnServer=true `
+                                                    /p:EnableMSDeployAppOffline=true `
+                                                    /p:MSDeployPackageLocation=".\obj\\${env.CONFIGURATION}\\Package" `
+                                                    /verbosity:detailed
                                             """
                                         }
                                     }
@@ -101,6 +123,7 @@ def call(Map config) {
                                 } catch (err) {
                                     echo "❌ Error en ${api}: ${err}"
                                     apisFallidas << api
+                                    // Continuar con las siguientes APIs en lugar de fallar completamente
                                 }
                             }
                         }
