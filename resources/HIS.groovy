@@ -94,7 +94,7 @@ return [
             ]
         ],
         ApiTask: [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/ApiPatient",
+            REPO_PATH: "${env.REPO_PATH}/API_HIS/ApiTask",
             CREDENCIALES: [
                 demo: "PROFILE_HIS_ApiTaskt_DEMO",
                 test: "PROFILE_HIS_ApiTask_TEST"
