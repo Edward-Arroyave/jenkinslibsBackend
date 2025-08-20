@@ -72,16 +72,15 @@ def call(Map config) {
 
                                                 if (-not \$profile) { Write-Error "❌ No se encontró perfil MSDeploy"; exit 1 }
 
-                                                # Tomar datos de publicación
+                                                # Forzar HTTPS
                                                 \$url  = \$profile.publishUrl
+                                                if (\$url -like "http://*") { \$url = \$url -replace "http://", "https://" }
+
                                                 \$site = \$profile.msdeploySite
                                                 \$user = \$profile.userName
                                                 \$pass = \$profile.userPWD
 
-                                                # Carpeta de proyecto a publicar (igual que VS)
                                                 \$projectFolder = (Get-ChildItem -Directory | Select-Object -First 1).FullName
-
-                                                # URL completa para MSDeploy
                                                 \$msdeployUrl = "\$url/msdeploy.axd?site=\$site"
 
                                                 Write-Host "🔄 Restaurando paquetes NuGet..."
@@ -92,12 +91,10 @@ def call(Map config) {
                                                     -verb:sync `
                                                     -source:contentPath="\$projectFolder" `
                                                     -dest:contentPath="\$site",computerName="\$msdeployUrl",userName="\$user",password="\$pass",authType="Basic" `
-                                                    -allowUntrusted `
-                                                    -enableRule:DoNotDeleteRule  # Para no eliminar archivos existentes como VS
+                                                    -allowUntrusted
                                             """
                                         }
                                     }
-
 
                                     apisExitosas << api
                                 } catch (err) {
