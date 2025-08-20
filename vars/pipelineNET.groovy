@@ -68,30 +68,31 @@ def call(Map config) {
                                                 dotnet restore ${api}.csproj
                                                 dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
                                                 
-                                                Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
-                                                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                                                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+                                                Write-Host "📄 Leyendo perfil de publicación desde: `$env:PUBLISH_SETTINGS"
+                                                [xml]`$pub = Get-Content "`$env:PUBLISH_SETTINGS"
+                                                `$profile = `$pub.publishData.publishProfile | Where-Object { `$_.publishMethod -eq "MSDeploy" }
 
-                                                if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
+                                                if (-not `$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
 
-                                                Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
-                                                \$url  = \$profile.publishUrl
-                                                \$site = \$profile.msdeploySite
-                                                \$user = \$profile.userName
-                                                \$pass = \$profile.userPWD
+                                                Write-Host "🔑 Usando perfil: `$(`$profile.profileName)"
+                                                `$url  = `$profile.publishUrl
+                                                `$site = `$profile.msdeploySite
+                                                `$user = `$profile.userName
+                                                `$pass = `$profile.userPWD
 
-                                                \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
-                                                if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
+                                                `$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                                                if (-not `$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
 
-                                                Write-Host "🏗 Publicando proyecto con MSBuild de Visual Studio: \$projectFile"
+                                                Write-Host "🏗 Publicando proyecto con MSBuild de Visual Studio: `$projectFile"
 
-                                                "C:\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe" "\$projectFile" `
+                                                # Use proper escaping for the MSBuild command
+                                                & "C:\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe" "`$projectFile" `
                                                     /p:DeployOnBuild=true `
                                                     /p:WebPublishMethod=MSDeploy `
-                                                    /p:MsDeployServiceUrl="\$url" `
-                                                    /p:DeployIisAppPath="\$site" `
-                                                    /p:UserName="\$user" `
-                                                    /p:Password="\$pass" `
+                                                    /p:MsDeployServiceUrl="`$url" `
+                                                    /p:DeployIisAppPath="`$site" `
+                                                    /p:UserName="`$user" `
+                                                    /p:Password="`$pass" `
                                                     /p:Configuration=${CONFIGURATION} `
                                                     /p:AllowUntrustedCertificate=true
                                             """
