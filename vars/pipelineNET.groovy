@@ -82,7 +82,7 @@ def call(Map config) {
 
                                                 Write-Host "🚀 Publicando ${api} usando Web Deploy..."
 
-                                                & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" `
+                                                &  "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" `
                                                     -verb:sync `
                                                     -source:contentPath="\$projectFolder" `
                                                     -dest:contentPath="\$site",computerName="\$url",userName="\$user",password="\$pass",authType="Basic" `
