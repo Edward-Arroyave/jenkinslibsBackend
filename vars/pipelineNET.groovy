@@ -11,7 +11,7 @@ def call(Map config) {
 
     pipeline {
         agent {
-            label 'Windws-node'
+            label 'Windows-node'
         }
 
         environment {
@@ -35,13 +35,12 @@ def call(Map config) {
 
                         cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
 
-                        // Guardamos configCompleto para el resto
                         env.CONFIG_COMPLETO = groovy.json.JsonOutput.toJson(configCompleto)
                     }
                 }
             }
 
-            stage('Deploy APIs') {
+            stage('Deploy APIs via MSDeploy') {
                 steps {
                     script {
                         def configCompleto = new groovy.json.JsonSlurperClassic().parseText(env.CONFIG_COMPLETO)
@@ -63,35 +62,41 @@ def call(Map config) {
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                             powershell """
-                                                # Fuerza TLS 1.2
+                                                # TLS 1.2
                                                 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-                                                # Cargar el archivo .publishsettings
+                                                # Leer el perfil MSDeploy
                                                 [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
                                                 \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
                                                 if (-not \$profile) { Write-Error "❌ No se encontró perfil MSDeploy"; exit 1 }
 
-                                                # Forzar HTTPS
                                                 \$url  = \$profile.publishUrl
+                                                # Forzar HTTPS
                                                 if (\$url -like "http://*") { \$url = \$url -replace "http://", "https://" }
 
                                                 \$site = \$profile.msdeploySite
                                                 \$user = \$profile.userName
                                                 \$pass = \$profile.userPWD
 
+                                                # Carpeta del proyecto
                                                 \$projectFolder = (Get-ChildItem -Directory | Select-Object -First 1).FullName
                                                 \$msdeployUrl = "\$url/msdeploy.axd?site=\$site"
 
+                                                # Restaurar y compilar
                                                 Write-Host "🔄 Restaurando paquetes NuGet..."
                                                 dotnet restore
+                                                Write-Host "🔨 Publicando proyecto..."
+                                                dotnet publish -c Release -o published
 
-                                                Write-Host "🚀 Publicando ${api} usando Web Deploy..."
+                                                # Ejecutar MSDeploy
+                                                Write-Host "🚀 Desplegando ${api} con MSDeploy..."
                                                 & "C:\\Program Files\\IIS\\Microsoft Web Deploy V3\\msdeploy.exe" `
                                                     -verb:sync `
-                                                    -source:contentPath="\$projectFolder" `
+                                                    -source:contentPath="published" `
                                                     -dest:contentPath="\$site",computerName="\$msdeployUrl",userName="\$user",password="\$pass",authType="Basic" `
                                                     -allowUntrusted
+
                                             """
                                         }
                                     }
@@ -114,7 +119,7 @@ def call(Map config) {
                     def APIS_FAILURE = ""
                     def APIS_SUCCESSFUL = ""
                     if (apisExitosas) { APIS_SUCCESSFUL += "✅ ${apisExitosas.join(', ')}\n" }
-                    if (apisFallidas) { APIS_FAILURE    += "❌ ${apisFallidas.join(', ')}" }
+                    if (apisFallidas) { APIS_FAILURE += "❌ ${apisFallidas.join(', ')}" }
 
                     sendNotificationTeamsNET([
                         APIS_SUCCESSFUL: APIS_SUCCESSFUL,
