@@ -8,8 +8,8 @@ return [
         backendQC: [
             REPO_PATH: "${env.REPO_PATH}/qc_backend_web",
             CREDENCIALES: [
-                demo: "QC_BACKEND_DEMO",
-                test: "QC_BACKEND_TEST"
+                demo: "PROFILE_QC_BACKEND_DEMO",
+                test: "PROFILE_QC_BACKEND_TEST"
             ],
             URL: [
                 demo: "https://valiqc-backend-general-demo.azurewebsites.net",
