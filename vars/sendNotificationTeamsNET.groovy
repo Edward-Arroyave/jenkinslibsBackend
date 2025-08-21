@@ -29,9 +29,9 @@ def call(Map config) {
     // Reglas adicionales según config
     if (config.APIS_FAILURE) {
         if (!config.APIS_SUCCESSFUL) {
-            (color, emoji, statusText) = statusMap["FAILURE"].values()
-        } else {
             (color, emoji, statusText) = statusMap["UNSTABLE"].values()
+        } else {
+            (color, emoji, statusText) = statusMap["FAILURE"].values()
         }
     }
 
