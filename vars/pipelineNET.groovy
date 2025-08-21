@@ -122,7 +122,8 @@ def call(Map config) {
 
                     sendNotificationTeamsNET([
                         APIS_SUCCESSFUL: APIS_SUCCESSFUL,
-                        APIS_FAILURE: APIS_FAILURE
+                        APIS_FAILURE: APIS_FAILURE,
+                        ENVIRONMENT: config.AMBIENTE
                     ])
                 }
 
