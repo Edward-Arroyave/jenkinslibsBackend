@@ -30,8 +30,10 @@ def call(Map config) {
     if (config.APIS_FAILURE) {
         if (!config.APIS_SUCCESSFUL) {
             (color, emoji, statusText) = statusMap["UNSTABLE"].values()
+            status = "UNSTABLE"
         } else {
             (color, emoji, statusText) = statusMap["FAILURE"].values()
+            status = "FAILURE"
         }
     }
 
