@@ -8,8 +8,8 @@ return [
         Api_Agendamiento: [
             REPO_PATH: "${env.REPO_PATH}/qc_backend_web",
             CREDENCIALES: [
-                demo: "QC_BACKEND_DEMO",
-                test: "QC_BACKEND_TEST"
+                demo: "PROFILE_Api_Agendamiento_DEMO",
+                test: "PROFILE_Api_Agendamiento_TEST"
             ],
             URL: [
                 demo: "https://agendamiento-backend-co-demo-gba4fhbqexf2dzcc.eastus2-01.azurewebsites.net",
@@ -19,8 +19,8 @@ return [
         Api_ProcesosAuto: [
             REPO_PATH: "${env.REPO_PATH}/qc_backend_web",
             CREDENCIALES: [
-                demo: "",
-                test: ""
+                demo: "PROFILE_Api_ProcesosAuto_TEST",
+                test: "PROFILE_Api_ProcesosAuto_TEST"
             ],
             URL: [
                 demo: "",
