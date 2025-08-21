@@ -14,20 +14,25 @@ def call(Map config) {
     if (minutes > 0) { durationText += "${minutes}m " }
     durationText += String.format("%.1f", seconds) + "s"
 
-    // Determinar color y emoji según resultado
-    def status = currentBuild.currentResult ?: "FAILURE"
-    def color = "FF0000"
-    def emoji = "❌"
-    def statusText = "Build Failed"
+   def status = currentBuild.currentResult ?: "FAILURE"
+    // Mapa de estados base
+    def statusMap = [
+        "SUCCESS" : [color: "00FF00", emoji: "✅", statusText: "Build Succeeded"],
+        "UNSTABLE": [color: "FFFF00", emoji: "⚠️", statusText: "Build Unstable"],
+        "ABORTED" : [color: "FFA500", emoji: "⏹️", statusText: "Build Aborted"],
+        "FAILURE" : [color: "FF0000", emoji: "❌", statusText: "Build Failed"]
+    ]
 
-    if (status == "SUCCESS") {
-        color = "00FF00"
-        emoji = "✅"
-        statusText = "Build Succeeded"
-    } else if (status == "UNSTABLE") {
-        color = "FFFF00"
-        emoji = "⚠️"
-        statusText = "Build Unstable"
+    // Valores por defecto según el estado actual
+    def (color, emoji, statusText) = statusMap[status]?.values() ?: statusMap["FAILURE"].values()
+
+    // Reglas adicionales según config
+    if (config.APIS_FAILURE) {
+        if (!config.APIS_SUCCESSFUL) {
+            (color, emoji, statusText) = statusMap["FAILURE"].values()
+        } else {
+            (color, emoji, statusText) = statusMap["UNSTABLE"].values()
+        }
     }
 
     // Enviar notificación a Teams
