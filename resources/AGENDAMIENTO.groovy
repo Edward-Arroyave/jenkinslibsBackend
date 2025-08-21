@@ -6,7 +6,7 @@ return [
 
     APIS: [
         Api_Agendamiento: [
-            REPO_PATH: "${env.REPO_PATH}/qc_backend_web",
+            REPO_PATH: "${env.REPO_PATH}/Api_Agendamiento",
             CREDENCIALES: [
                 demo: "PROFILE_Api_Agendamiento_DEMO",
                 test: "PROFILE_Api_Agendamiento_TEST"
@@ -17,7 +17,7 @@ return [
             ]
         ],
         Api_ProcesosAuto: [
-            REPO_PATH: "${env.REPO_PATH}/qc_backend_web",
+            REPO_PATH: "${env.REPO_PATH}/Api_ProcesosAuto",
             CREDENCIALES: [
                 demo: "PROFILE_Api_ProcesosAuto_TEST",
                 test: "PROFILE_Api_ProcesosAuto_TEST"
