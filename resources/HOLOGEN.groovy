@@ -28,7 +28,7 @@ return [
             ]
         ],
         Api_Interoperabilidad: [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/Api_Interoperabilidad",
+            REPO_PATH: "${env.REPO_PATH}/API_Hologen/Api_Interoperabilidad",
             CREDENCIALES: [
                demo: "PROFILE_HOLOGEN_Api_Interoperabilidad_DEMO",
                 test: "PROFILE_HOLOGEN_Api_Interoperabilidad_TEST"
