@@ -8,34 +8,34 @@ return [
         Api_BioInformatica: [
             REPO_PATH: "${env.REPO_PATH}/API_Hologen/Api_BioInformatica",
             CREDENCIALES: [
-                demo: "",
-                test: "PROFILE_HIS_API_CRTZ_WEB_TEST"
+                demo: "PROFILE_HOLOGEN_Api_BioInformatica_DEMO",
+                test: "PROFILE_HOLOGEN_Api_BioInformatica_TEST"
             ],
             URL: [
-                demo: "",
-                test: "https://his-backend-caracterizacion-annar-pruebas.azurewebsites.net"
+                demo: "https://hologen-backend-colcan-cliente.azurewebsites.net",
+                test: "https://bioinformatica-backend-colcan-pruebas.azurewebsites.net"
             ]
         ],
         API_Hologen: [
-            REPO_PATH: "${env.REPO_PATH}/API_Hologen/API_HIS",
+            REPO_PATH: "${env.REPO_PATH}/API_Hologen/API_Hologen",
             CREDENCIALES: [
-                demo: "PROFILE_HIS_API_HIS_DEMO",
-                test: "PROFILE_HIS_API_HIS_TEST"
+                demo: "PROFILE_HOLOGEN_API_Hologen_DEMO",
+                test: "PROFILE_HOLOGEN_API_Hologen_TEST"
             ],
             URL: [
-                demo: "https://his-backend-annar-demo.azurewebsites.net",
-                test: "https://his-backend-annar-pruebas.azurewebsites.net"
+                demo: "https://hologen-backend-colcan-cliente.azurewebsites.net",
+                test: "https://hologen-backend-colcan-pruebas.azurewebsites.net"
             ]
         ],
         Api_Interoperabilidad: [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/ApiInteroperability",
+            REPO_PATH: "${env.REPO_PATH}/API_HIS/Api_Interoperabilidad",
             CREDENCIALES: [
-                demo: "PROFILE_HIS_API_HIS_APP_DEMO",
-                test: "PROFILE_HIS_API_HIS_APP_TEST"
+               demo: "PROFILE_HOLOGEN_Api_Interoperabilidad_DEMO",
+                test: "PROFILE_HOLOGEN_Api_Interoperabilidad_TEST"
             ],
             URL: [
-                demo: "https://his-backend-app-annar-demo-d7dfdve9c0bzc8fy.eastus2-01.azurewebsites.net",
-                test: "https://his-backend-app-annar-pruebas-agejhqeqagebf2as.eastus2-01.azurewebsites.net"
+                demo: "https://hologen-backend-inter-colcan-demo.azurewebsites.net",
+                test: "https://hologen-backend-inter-colcan-pruebas.azurewebsites.net"
             ]
         ]
       
