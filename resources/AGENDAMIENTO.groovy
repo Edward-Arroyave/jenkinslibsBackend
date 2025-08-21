@@ -1,6 +1,6 @@
 return [
     AMBIENTES: [
-        demo: [ BRANCH: "Demo" ],
+        demo: [ BRANCH: "demo" ],
         test: [ BRANCH: "Test" ]
     ],
 
