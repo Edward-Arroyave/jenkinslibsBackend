@@ -8,12 +8,12 @@ return [
         backendQC: [
             REPO_PATH: "${env.REPO_PATH}/qc_backend_web",
             CREDENCIALES: [
-                demo: "",
+                demo: "QC_BACKEND_DEMO",
                 test: "QC_BACKEND_TEST"
             ],
             URL: [
-                demo: "",
-                test: "https://his-backend-caracterizacion-annar-pruebas.azurewebsites.net"
+                demo: "https://valiqc-backend-general-demo.azurewebsites.net",
+                test: "https://valiqc-backend-general-pruebas.azurewebsites.net"
             ]
         ]
     ]
