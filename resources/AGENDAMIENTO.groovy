@@ -6,7 +6,7 @@ return [
 
     APIS: [
         Api_Agendamiento: [
-            REPO_PATH: "${env.REPO_PATH}/Api_Agendamiento",
+            REPO_PATH: "${env.REPO_PATH}/Agendamiento/Api_Agendamiento",
             CREDENCIALES: [
                 demo: "PROFILE_Api_Agendamiento_DEMO",
                 test: "PROFILE_Api_Agendamiento_TEST"
