@@ -53,7 +53,7 @@ return [
             ]
         ],
         ApiCovers: [
-            REPO_PATH: "${env.REPO_PATH}/ApiCovers",
+            REPO_PATH: "${env.REPO_PATH}/ApiCover",
             CREDENCIALES: [
                 Colombia_Test: "PROFILE_LIS_ApiCovers_COLOMBIA_TEST",
                 Colombia_Demo: "PROFILE_LIS_ApiCovers_COLOMBIA_DEMO",
