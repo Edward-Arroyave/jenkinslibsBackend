@@ -31,103 +31,298 @@ return [
                 MX_Test: ""
             ]
         ],
-        API_HIS: [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/API_HIS",
+        ApiAudit: [
+            REPO_PATH: "${env.REPO_PATH}/ApiAudit",
             CREDENCIALES: [
-                demo: "PROFILE_HIS_API_HIS_DEMO",
-                test: "PROFILE_HIS_API_HIS_TEST"
+                Colombia_Test: "PROFILE_LIS_ApiAudit_COLOMBIA_TEST",
+                Colombia_Demo: "PROFILE_LIS_ApiAudit_COLOMBIA_DEMO",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "PROFILE_LIS_ApiAudit_LATAM_DEMO",
+                Aimsa_Demo: "PROFILE_LIS_ApiAudit_AIMSA_DEMO",
+                Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_ApiAudit_AIMSA_DEMO",
+                MX_Test: ""
             ],
             URL: [
-                demo: "https://his-backend-annar-demo.azurewebsites.net",
-                test: "https://his-backend-annar-pruebas.azurewebsites.net"
+                Colombia_Test: "https://livelis-backend-auditoria-annar-pruebas.azurewebsites.net",
+                Colombia_Demo: "https://livelis-backend-auditoria-annar-demo.azurewebsites.net",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "https://livelis-auditoria-latam-demo-exdze9akgcafd0ff.eastus2-01.azurewebsites.net",
+                Aimsa_Demo: "https://livelis-auditoria-aimsa-demo-e4gsg5b6d4fmcjcw.eastus2-01.azurewebsites.net",
+                Aimsa_Demo_RamaDemoLatam: "https://livelis-auditoria-aimsa-demo-e4gsg5b6d4fmcjcw.eastus2-01.azurewebsites.net",
+                MX_Test: ""
             ]
         ],
-        API_HIS_APP: [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/API_HIS_APP",
+        ApiCover: [
+            REPO_PATH: "${env.REPO_PATH}/ApiCover",
             CREDENCIALES: [
-                demo: "PROFILE_HIS_API_HIS_APP_DEMO",
-                test: "PROFILE_HIS_API_HIS_APP_TEST"
+                Colombia_Test: "PROFILE_LIS_ApiCover_COLOMBIA_TEST",
+                Colombia_Demo: "PROFILE_LIS_ApiCover_COLOMBIA_DEMO",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "PROFILE_LIS_ApiCover_LATAM_DEMO",
+                Aimsa_Demo: "PROFILE_LIS_ApiCover_AIMSA_DEMO",
+                Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_ApiCover_AIMSA_DEMO",
+                MX_Test: ""
             ],
             URL: [
-                demo: "https://his-backend-app-annar-demo-d7dfdve9c0bzc8fy.eastus2-01.azurewebsites.net",
-                test: "https://his-backend-app-annar-pruebas-agejhqeqagebf2as.eastus2-01.azurewebsites.net"
+                Colombia_Test: "https://livelis-backend-covers--pruebas-f9dzh2fpa5h7e4aj.eastus2-01.azurewebsites.net",
+                Colombia_Demo: "https://livelis-backend-covers--demo-epcadabmf6eacnhs.eastus2-01.azurewebsites.net",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "https://livelis-covers-latam-demo-d8eteya7gxekbsen.eastus2-01.azurewebsites.net",
+                Aimsa_Demo: "https://livelis-covers-aimsa-demo-hre4efdzgyezcud2.eastus2-01.azurewebsites.net",
+                Aimsa_Demo_RamaDemoLatam: "https://livelis-covers-aimsa-demo-hre4efdzgyezcud2.eastus2-01.azurewebsites.net",
+                MX_Test: ""
+            ]
+        ],
+        APIInteroperabilidad: [
+            REPO_PATH: "${env.REPO_PATH}/APIInteroperabilidad",
+            CREDENCIALES: [
+                Colombia_Test: "",
+                Colombia_Demo: "",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "PROFILE_LIS_APIInteroperabilidad_LATAM_DEMO",
+                Aimsa_Demo: "PROFILE_LIS_APIInteroperabilidad_AIMSA_DEMO",
+                Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_APIInteroperabilidad_AIMSA_DEMO",
+                MX_Test: ""
+            ],
+            URL: [
+                Colombia_Test: "",
+                Colombia_Demo: "",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "https://livelis-interoperabilid-dem-ava7dyhbffamg6e7.eastus2-01.azurewebsites.net",
+                Aimsa_Demo: "https://livelis-inter-aimsa-demo-f7e0eud9hpfndpe7.eastus2-01.azurewebsites.net",
+                Aimsa_Demo_RamaDemoLatam: "https://livelis-inter-aimsa-demo-f7e0eud9hpfndpe7.eastus2-01.azurewebsites.net",
+                MX_Test: ""
             ]
         ],
         ApiElectronicInvoice: [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/ApiElectronicInvoice",
+            REPO_PATH: "${env.REPO_PATH}/ApiElectronicInvoice",
             CREDENCIALES: [
-                demo: "PROFILE_HIS_ApiElectronicInvoice_DEMO",
-                test: "PROFILE_HIS_ApiElectronicInvoice_TEST"
+                Colombia_Test: "PROFILE_LIS_ApiElectronicInvoice_COLOMBIA_TEST",
+                Colombia_Demo: "PROFILE_LIS_ApiElectronicInvoice_COLOMBIA_DEMO",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "PROFILE_LIS_ApiElectronicInvoice_LATAM_DEMO",
+                Aimsa_Demo: "PROFILE_LIS_ApiElectronicInvoice_AIMSA_DEMO",
+                Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_ApiElectronicInvoice_AIMSA_DEMO",
+                MX_Test: ""
             ],
             URL: [
-                demo: "https://his-backend-electronici-demo-f4epgjasdmcbaya9.eastus2-01.azurewebsites.net",
-                test: "https://his-backend-electronici-pruebas-b0asd6dwf8ajexbp.eastus2-01.azurewebsites.net"
+                Colombia_Test: "https://api-electronicinvoice-pruebas-a0frfze9gsbwfbhk.eastus2-01.azurewebsites.net",
+                Colombia_Demo: "https://api-electronicinvoice-demo-bda9c0h9avfmavcs.eastus2-01.azurewebsites.net",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "https://livelis-electronicinvoi-dem-drbhgwg3bqaycvgc.eastus2-01.azurewebsites.net",
+                Aimsa_Demo: "https://livelis-electronicinvoi-demo-bebjcwctesh7cegk.eastus2-01.azurewebsites.net",
+                Aimsa_Demo_RamaDemoLatam: "https://livelis-electronicinvoi-demo-bebjcwctesh7cegk.eastus2-01.azurewebsites.net",
+                MX_Test: ""
             ]
         ],
-        "Financial.Api": [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/Financial.Api",
+        APINewPathology: [
+            REPO_PATH: "${env.REPO_PATH}/APINewPathology",
             CREDENCIALES: [
-                demo: "PROFILE_HIS_Financial.Api_DEMO",
-                test: "PROFILE_HIS_Financial.Api_TEST"
+                Colombia_Test: "PROFILE_LIS_APINewPathology_COLOMBIA_TEST",
+                Colombia_Demo: "PROFILE_LIS_APINewPathology_COLOMBIA_DEMO",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "PROFILE_LIS_APINewPathology_LATAM_DEMO",
+                Aimsa_Demo: "PROFILE_LIS_APINewPathology_AIMSA_DEMO",
+                Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_APINewPathology_AIMSA_DEMO",
+                MX_Test: ""
             ],
             URL: [
-                demo: "https://his-backend-electronici-demo-f4epgjasdmcbaya9.eastus2-01.azurewebsites.net",
-                test: "https://his-backend-fincanciera-pruebas-aeemf9fng6caa9gr.eastus2-01.azurewebsites.net"
+                Colombia_Test: "http://patologia-backend-annar-pruebas.azurewebsites.net",
+                Colombia_Demo: "http://patologia-backend-annar-demo.azurewebsites.net",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "https://livelis-patologia-latam-demo-bycadff7afedcfbf.eastus2-01.azurewebsites.net",
+                Aimsa_Demo: "https://livelis-patologia-aimsa-demo-daejgshvh5czhmfn.eastus2-01.azurewebsites.net",
+                Aimsa_Demo_RamaDemoLatam: "https://livelis-patologia-aimsa-demo-daejgshvh5czhmfn.eastus2-01.azurewebsites.net",
+                MX_Test: ""
             ]
         ],
-        "Schedule.Api": [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/Schedule.Api",
+        ApiPOSANALYTICS: [
+            REPO_PATH: "${env.REPO_PATH}/ApiPOSANALYTICS",
             CREDENCIALES: [
-                demo: "PROFILE_HIS_Schedule.Api_DEMO",
-                test: "PROFILE_HIS_Schedule.Api_TEST"
+                Colombia_Test: "PROFILE_LIS_ApiPOSANALYTICS_COLOMBIA_TEST",
+                Colombia_Demo: "PROFILE_LIS_ApiPOSANALYTICS_COLOMBIA_DEMO",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "PROFILE_LIS_ApiPOSANALYTICS_LATAM_DEMO",
+                Aimsa_Demo: "PROFILE_LIS_ApiPOSANALYTICS_AIMSA_DEMO",
+                Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_ApiPOSANALYTICS_AIMSA_DEMO",
+                MX_Test: ""
             ],
             URL: [
-                demo: "https://agendamiento-api-his-co-demo-eth4erhxh6d2g0fz.eastus2-01.azurewebsites.net/index.html",
-                test: "https://agendamiento-api-his-co-pruebas-btc6csgbezbxgqep.eastus2-01.azurewebsites.net"
+                Colombia_Test: "https://livelis-backend-posanalitico-annar-pruebas.azurewebsites.net",
+                Colombia_Demo: "https://livelis-backend-posanalitico-annar-demo.azurewebsites.net",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "https://livelis-posanalitico-la-demo-fze6ghava9bjgjdp.eastus2-01.azurewebsites.net",
+                Aimsa_Demo: "https://livelis-posanalitico-ai-demo-akfwaadnb0dwghhv.eastus2-01.azurewebsites.net",
+                Aimsa_Demo_RamaDemoLatam: "https://livelis-posanalitico-ai-demo-akfwaadnb0dwghhv.eastus2-01.azurewebsites.net",
+                MX_Test: ""
             ]
         ],
-        ApiInteroperability: [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/ApiInteroperability",
+        "ResultsExport.Api": [
+            REPO_PATH: "${env.REPO_PATH}/ResultsExport.Api",
             CREDENCIALES: [
-                demo: "PROFILE_HIS_ApiInteroperability_DEMO",
-                test: "PROFILE_HIS_ApiInteroperability_TEST"
+                Colombia_Test: "",
+                Colombia_Demo: "PROFILE_LIS_ResultsExport.Api_COLOMBIA_DEMO",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "PROFILE_LIS_ResultsExport.Api_LATAM_DEMO",
+                Aimsa_Demo: "PROFILE_LIS_ResultsExport.Api_AIMSA_DEMO",
+                Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_ResultsExport.Api_AIMSA_DEMO",
+                MX_Test: ""
             ],
             URL: [
-                demo: "https://his-backend-interoperab-demo-fabhf0dgb8e4fng0.eastus2-01.azurewebsites.net",
-                test: "https://his-backend-interoperab-pruebas-e7c0frh8d3fzamdx.eastus2-01.azurewebsites.net"
+                Colombia_Test: "",
+                Colombia_Demo: "https://livelis-backend-resulta-demo-ddaqceajc4hjcghx.eastus2-01.azurewebsites.net",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "https://livelis-backend-resulta-de-eafva3f4hja3beac.eastus2-01.azurewebsites.net",
+                Aimsa_Demo: "https://livelis-backend-resulta-clie-g3gpg4avhjhygtfb.eastus2-01.azurewebsites.net",
+                Aimsa_Demo_RamaDemoLatam: "https://livelis-backend-resulta-clie-g3gpg4avhjhygtfb.eastus2-01.azurewebsites.net",
+                MX_Test: ""
             ]
         ],
-        "Invoice.Api": [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/Invoice.Api",
+        "ResultsExport.Worker": [
+            REPO_PATH: "${env.REPO_PATH}/ResultsExport.Worker",
             CREDENCIALES: [
-                demo: "PROFILE_HIS_Invoice.Api_DEMO",
-                test: "PROFILE_HIS_Invoice.Api_TEST"
+                Colombia_Test: "",
+                Colombia_Demo: "",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "",
+                Aimsa_Demo: "",
+                Aimsa_Demo_RamaDemoLatam: "",
+                MX_Test: ""
             ],
             URL: [
-                demo: "https://his-backend-invoice-ann-demo-fhcgevbbgdfkc0cr.eastus2-01.azurewebsites.net",
-                test: "https://his-backend-invoice-ann-pruebas-bpfbdyaybze7deb5.eastus2-01.azurewebsites.net"
+                Colombia_Test: "",
+                Colombia_Demo: "",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "",
+                Aimsa_Demo: "",
+                Aimsa_Demo_RamaDemoLatam: "",
+                MX_Test: ""
             ]
         ],
-        ApiPatient: [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/ApiPatient",
+        ApiTaskHangfire: [
+            REPO_PATH: "${env.REPO_PATH}/ApiTaskHangfire",
             CREDENCIALES: [
-                demo: "PROFILE_HIS_ApiPatient_DEMO",
-                test: "PROFILE_HIS_ApiPatient_TEST"
+                Colombia_Test: "",
+                Colombia_Demo: "PROFILE_LIS_ApiTaskHangfire_COLOMBIA_DEMO",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "",
+                Aimsa_Demo: "",
+                Aimsa_Demo_RamaDemoLatam: "",
+                MX_Test: ""
             ],
             URL: [
-                demo: "https://his-backend-pacientes-a-demo-bkgkexcdamgbb0a7.eastus2-01.azurewebsites.net",
-                test: "https://his-backend-pacientes-a-test-azakd3d0g9ctavcj.eastus2-01.azurewebsites.net"
+                Colombia_Test: "",
+                Colombia_Demo: "https://livelis-task-annar-demo.azurewebsites.net",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "",
+                Aimsa_Demo: "",
+                Aimsa_Demo_RamaDemoLatam: "",
+                MX_Test: ""
             ]
         ],
-        ApiTask: [
-            REPO_PATH: "${env.REPO_PATH}/API_HIS/ApiTask",
+        ApiTrack: [
+            REPO_PATH: "${env.REPO_PATH}/ApiTrack",
             CREDENCIALES: [
-                demo: "PROFILE_HIS_ApiTaskt_DEMO",
-                test: "PROFILE_HIS_ApiTask_TEST"
+                Colombia_Test: "PROFILE_LIS_ApiTrack_COLOMBIA_TEST",
+                Colombia_Demo: "PROFILE_LIS_ApiTrack_COLOMBIA_DEMO",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "PROFILE_LIS_ApiTrack_LATAM_DEMO",
+                Aimsa_Demo: "PROFILE_LIS_ApiTrack_AIMSA_DEMO",
+                Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_ApiTrack_AIMSA_DEMO",
+                MX_Test: ""
             ],
             URL: [
-                demo: "https://his-backend-task-annar-demo-dmfeajbvd6ecebed.eastus2-01.azurewebsites.net",
-                test: "https://his-backend-task-annar-pruebas-gzgdgsedevehbmff.eastus2-01.azurewebsites.net"
+                Colombia_Test: "https://livelis-backend-tracing-annar-pruebas.azurewebsites.net",
+                Colombia_Demo: "https://livelis-backend-tracing-annar-demo.azurewebsites.net",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "https://livelis-tracing-latam-demo-c3h3gsbxcvdmbbhp.eastus2-01.azurewebsites.net",
+                Aimsa_Demo: "https://livelis-tracing-aimsa-demo-bdhra6aydxdtc8ec.eastus2-01.azurewebsites.net",
+                Aimsa_Demo_RamaDemoLatam: "https://livelis-tracing-aimsa-demo-bdhra6aydxdtc8ec.eastus2-01.azurewebsites.net",
+                MX_Test: ""
+            ]
+        ],
+        ApiGlobalSettings: [
+            REPO_PATH: "${env.REPO_PATH}/ApiGlobalSettings",
+            CREDENCIALES: [
+                Colombia_Test: "PROFILE_LIS_ApiGlobalSettings_COLOMBIA_TEST",
+                Colombia_Demo: "PROFILE_LIS_ApiGlobalSettings_COLOMBIA_DEMO",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "PROFILE_LIS_ApiGlobalSettings_LATAM_DEMO",
+                Aimsa_Demo: "PROFILE_LIS_ApiGlobalSettings_AIMSA_DEMO",
+                Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_ApiGlobalSettings_AIMSA_DEMO",
+                MX_Test: ""
+            ],
+            URL: [
+                Colombia_Test: "https://livelis-backend-setting-pruebas-epgtdac5g0bnbceb.eastus2-01.azurewebsites.net",
+                Colombia_Demo: "https://livelis-backend-setting-demo-bqchewctb6f8gqa9.eastus2-01.azurewebsites.net",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "https://livelis-globalsettings--dem-cffbh9f8dtdpe2fj.eastus2-01.azurewebsites.net",
+                Aimsa_Demo: "https://livelis-globalsettings--demo-fsc2a5bhengrhyh6.eastus2-01.azurewebsites.net",
+                Aimsa_Demo_RamaDemoLatam: "https://livelis-globalsettings--demo-fsc2a5bhengrhyh6.eastus2-01.azurewebsites.net",
+                MX_Test: ""
+            ]
+        ],
+        IncomeResult: [
+            REPO_PATH: "${env.REPO_PATH}/IncomeResult",
+            CREDENCIALES: [
+                Colombia_Test: "",
+                Colombia_Demo: "PROFILE_LIS_IncomeResult_COLOMBIA_DEMO",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "",
+                Aimsa_Demo: "PROFILE_LIS_IncomeResult_AIMSA_DEMO",
+                Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_IncomeResult_AIMSA_DEMO",
+                MX_Test: ""
+            ],
+            URL: [
+                Colombia_Test: "",
+                Colombia_Demo: "https://livelis-backend-analiti-demo-adhbegh3bkg2gzdn.eastus2-01.azurewebsites.net",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "",
+                Aimsa_Demo: "https://livelis-insertresult-ai-demo-exhhhedhadbkhdat.eastus2-01.azurewebsites.net",
+                Aimsa_Demo_RamaDemoLatam: "https://livelis-insertresult-ai-demo-exhhhedhadbkhdat.eastus2-01.azurewebsites.net",
+                MX_Test: ""
+            ]
+        ],
+        ApiInventory: [
+            REPO_PATH: "${env.REPO_PATH}/ApiInventory",
+            CREDENCIALES: [
+                Colombia_Test: "PROFILE_LIS_ApiInventory_COLOMBIA_TEST",
+                Colombia_Demo: "PROFILE_LIS_ApiInventory_COLOMBIA_DEMO",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "PROFILE_LIS_ApiInventory_LATAM_DEMO",
+                Aimsa_Demo: "PROFILE_LIS_ApiInventory_AIMSA_DEMO",
+                Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_ApiInventory_AIMSA_DEMO",
+                MX_Test: ""
+            ],
+            URL: [
+                Colombia_Test: "https://livelis-backend-inventa-pruebas-a2bgedfnabe9frad.eastus2-01.azurewebsites.net",
+                Colombia_Demo: "https://livelis-backend-inventa-demo-dyeaepa4fecdfyex.eastus2-01.azurewebsites.net",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "https://livelis-inventarios-lat-demo-aceed6gvged3ckbh.eastus2-01.azurewebsites.net",
+                Aimsa_Demo: "https://livelis-inventarios-aim-demo-hrcuc3hycye5dvb8.eastus2-01.azurewebsites.net",
+                Aimsa_Demo_RamaDemoLatam: "https://livelis-inventarios-aim-demo-hrcuc3hycye5dvb8.eastus2-01.azurewebsites.net",
+                MX_Test: ""
+            ]
+        ],
+        ApiLIS: [
+            REPO_PATH: "${env.REPO_PATH}/ApiLIS",
+            CREDENCIALES: [
+                Colombia_Test: "PROFILE_LIS_ApiLIS_COLOMBIA_TEST",
+                Colombia_Demo: "PROFILE_LIS_ApiLIS_COLOMBIA_DEMO",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "PROFILE_LIS_ApiLIS_LATAM_DEMO",
+                Aimsa_Demo: "PROFILE_LIS_ApiLIS_AIMSA_DEMO",
+                Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_ApiLIS_AIMSA_DEMO",
+                MX_Test: ""
+            ],
+            URL: [
+                Colombia_Test: "http://livelis-backend-annar-pruebas.azurewebsites.net",
+                Colombia_Demo: "http://livelis-backend-annar-demo.azurewebsites.net",
+                Colombia_PRE_PRODUCCION: "",
+                Latam_Demo: "https://livelis-preanalitico-la-demo-dufjfse9hbc9dmbq.eastus2-01.azurewebsites.net",
+                Aimsa_Demo: "https://livelis-preanalitico-ai-demo-gtayfnhydzhha6h9.eastus2-01.azurewebsites.net",
+                Aimsa_Demo_RamaDemoLatam: "https://livelis-preanalitico-ai-demo-gtayfnhydzhha6h9.eastus2-01.azurewebsites.net",
+                MX_Test: ""
             ]
         ]
     ]
