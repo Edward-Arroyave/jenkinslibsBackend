@@ -52,15 +52,15 @@ return [
                 MX_Test: ""
             ]
         ],
-        ApiCover: [
-            REPO_PATH: "${env.REPO_PATH}/ApiCover",
+        ApiCovers: [
+            REPO_PATH: "${env.REPO_PATH}/ApiCovers",
             CREDENCIALES: [
-                Colombia_Test: "PROFILE_LIS_ApiCover_COLOMBIA_TEST",
-                Colombia_Demo: "PROFILE_LIS_ApiCover_COLOMBIA_DEMO",
+                Colombia_Test: "PROFILE_LIS_ApiCovers_COLOMBIA_TEST",
+                Colombia_Demo: "PROFILE_LIS_ApiCovers_COLOMBIA_DEMO",
                 Colombia_PRE_PRODUCCION: "",
-                Latam_Demo: "PROFILE_LIS_ApiCover_LATAM_DEMO",
-                Aimsa_Demo: "PROFILE_LIS_ApiCover_AIMSA_DEMO",
-                Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_ApiCover_AIMSA_DEMO",
+                Latam_Demo: "PROFILE_LIS_ApiCovers_LATAM_DEMO",
+                Aimsa_Demo: "PROFILE_LIS_ApiCovers_AIMSA_DEMO",
+                Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_ApiCovers_AIMSA_DEMO",
                 MX_Test: ""
             ],
             URL: [
