@@ -47,25 +47,7 @@ def call(Map config) {
                         def configCompleto = new groovy.json.JsonSlurperClassic().parseText(env.CONFIG_COMPLETO)
 
                         for (api in apis) {
-                            stage("Restore ${api}") {
-                                dir("${configCompleto.APIS[api].REPO_PATH}") {
-                                    powershell """
-                                        Write-Host "📄 Restaurando dependencias de ${api}..."
-                                        dotnet restore ${api}.csproj
-                                    """
-                                }
-                            }
-                           
-                            stage("Build ${api}") {
-                                dir("${configCompleto.APIS[api].REPO_PATH}") {
-                                    powershell """
-                                        Write-Host "🏗 Compilando ${api}..."
-                                        dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
-                                    """
-                                }
-                            } 
-                        
-        
+
                             stage("Deploy ${api}") {
                                 try {
                                     def apiConfig = [
