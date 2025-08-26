@@ -47,6 +47,25 @@ def call(Map config) {
                         def configCompleto = new groovy.json.JsonSlurperClassic().parseText(env.CONFIG_COMPLETO)
 
                         for (api in apis) {
+                            stage("Restore ${api}") {
+                                dir("${configCompleto.APIS[api].REPO_PATH}") {
+                                    powershell """
+                                        Write-Host "📄 Restaurando dependencias de ${api}..."
+                                        dotnet restore ${api}.csproj
+                                    """
+                                }
+                            }
+                           
+                            stage("Build ${api}") {
+                                dir("${configCompleto.APIS[api].REPO_PATH}") {
+                                    powershell """
+                                        Write-Host "🏗 Compilando ${api}..."
+                                        dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
+                                    """
+                                }
+                            } 
+                        
+        
                             stage("Deploy ${api}") {
                                 try {
                                     def apiConfig = [
@@ -62,14 +81,8 @@ def call(Map config) {
 
                                     dir("${apiConfig.CS_PROJ_PATH}") {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                           powershell """
-
+                                        powershell """
                                             Write-Host "🔐 Versión de Protocolo de Seguridad configurada: \$([System.Net.ServicePointManager]::SecurityProtocol)"
-                                            
-                                            Write-Host "📄 Restaurando y compilando ${api}..."
-                                            dotnet restore ${api}.csproj
-                                            dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
-                                            
                                             Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
                                             [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
                                             \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
@@ -77,10 +90,6 @@ def call(Map config) {
                                             if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
 
                                             Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
-                                            \$url  = \$profile.publishUrl
-                                            \$site = \$profile.msdeploySite
-                                            \$user = \$profile.userName
-                                            \$pass = \$profile.userPWD
 
                                             \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
                                             if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
@@ -91,10 +100,10 @@ def call(Map config) {
                                             dotnet msbuild "\$projectFile" `
                                                 /p:DeployOnBuild=true `
                                                 /p:WebPublishMethod=MSDeploy `
-                                                /p:MsDeployServiceUrl="\$url" `
-                                                /p:DeployIisAppPath="\$site" `
-                                                /p:UserName="\$user" `
-                                                /p:Password="\$pass" `
+                                                /p:MsDeployServiceUrl="\$profile.publishUrl" `
+                                                /p:DeployIisAppPath="\$profile.msdeploySite" `
+                                                /p:UserName="\$profile.userName" `
+                                                /p:Password="\$profile.userPWD" `
                                                 /p:Configuration=${CONFIGURATION} `
                                                 /p:AllowUntrustedCertificate=true
                                         """
@@ -113,6 +122,13 @@ def call(Map config) {
         }
 
         post {
+
+            success {
+                echo '🎉 DESPLIEGUE FINALIZADO CON ÉXITO'
+            }
+            failure {
+                echo '💥 ERROR DURANTE EL DESPLIEGUE'
+            }
             always {
                 script {
                     def APIS_FAILURE = ""
@@ -127,7 +143,7 @@ def call(Map config) {
                     ])
                 }
 
-                cleanWs()
+               
             }
         }
     }
