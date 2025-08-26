@@ -45,73 +45,80 @@ def call(Map config) {
                 steps {
                     script {
                         def configCompleto = new groovy.json.JsonSlurperClassic().parseText(env.CONFIG_COMPLETO)
-
-                        for (api in apis) {
-
-
-                              stage("Restore ${api}") {
-                                dir("${configCompleto.APIS[api].REPO_PATH}") {
-                                    powershell """
-                                        Write-Host "📄 Restaurando dependencias de ${api}..."
-                                        dotnet restore ${api}.csproj
-                                    """
-                                }
-                            }
-
-                            stage("Deploy ${api}") {
+                        
+                        // Crear mapa para etapas paralelas
+                        def parallelStages = [:]
+                        
+                        apis.each { api ->
+                            parallelStages["Deploy-${api}"] = {
                                 try {
-                                    def apiConfig = [
-                                        CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
-                                        CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
-                                        URL: configCompleto.APIS[api].URL[config.AMBIENTE]
-                                    ]
-
-                                    echo "=== Desplegando API: ${api} ==="
-                                    echo "Ruta proyecto: ${apiConfig.CS_PROJ_PATH}"
-                                    echo "Credenciales usadas: ${apiConfig.CREDENTIALS_ID}"
-                                    echo "URL de despliegue: ${apiConfig.URL}"
-
-                                    dir("${apiConfig.CS_PROJ_PATH}") {
-                                        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                           powershell """
-
-                                            Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
-                                            [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                                            \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
-
-                                            if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
-
-                                            Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
-                                            \$url  = \$profile.publishUrl
-                                            \$site = \$profile.msdeploySite
-                                            \$user = \$profile.userName
-                                            \$pass = \$profile.userPWD
-
-                                            \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
-                                            if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
-
-                                            Write-Host "🏗 Publicando proyecto: \$projectFile"
-
-                                            # Ejecuta msbuild con las variables de entorno configuradas
-                                            dotnet msbuild "\$projectFile" `
-                                                /p:DeployOnBuild=true `
-                                                /p:WebPublishMethod=MSDeploy `
-                                                /p:MsDeployServiceUrl="\$url" `
-                                                /p:DeployIisAppPath="\$site" `
-                                                /p:UserName="\$user" `
-                                                /p:Password="\$pass" `
-                                                /p:Configuration=${CONFIGURATION} `
-                                                /p:AllowUntrustedCertificate=true
-                                        """
+                                    // Stage de Restore
+                                    stage("Restore ${api}") {
+                                        dir("${configCompleto.APIS[api].REPO_PATH}") {
+                                            powershell """
+                                                Write-Host "📄 Restaurando dependencias de ${api}..."
+                                                dotnet restore ${api}.csproj
+                                            """
                                         }
                                     }
-                                    apisExitosas << api
+
+                                    // Stage de Deploy
+                                    stage("Deploy ${api}") {
+                                        def apiConfig = [
+                                            CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
+                                            CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
+                                            URL: configCompleto.APIS[api].URL[config.AMBIENTE]
+                                        ]
+
+                                        echo "=== Desplegando API: ${api} ==="
+                                        echo "Ruta proyecto: ${apiConfig.CS_PROJ_PATH}"
+                                        echo "Credenciales usadas: ${apiConfig.CREDENTIALS_ID}"
+                                        echo "URL de despliegue: ${apiConfig.URL}"
+
+                                        dir("${apiConfig.CS_PROJ_PATH}") {
+                                            withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                                               powershell """
+                                                    Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
+                                                    [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                                                    \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+
+                                                    if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
+
+                                                    Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
+                                                    \$url  = \$profile.publishUrl
+                                                    \$site = \$profile.msdeploySite
+                                                    \$user = \$profile.userName
+                                                    \$pass = \$profile.userPWD
+
+                                                    \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                                                    if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
+
+                                                    Write-Host "🏗 Publicando proyecto: \$projectFile"
+
+                                                    # Ejecuta msbuild con las variables de entorno configuradas
+                                                    dotnet msbuild "\$projectFile" `
+                                                        /p:DeployOnBuild=true `
+                                                        /p:WebPublishMethod=MSDeploy `
+                                                        /p:MsDeployServiceUrl="\$url" `
+                                                        /p:DeployIisAppPath="\$site" `
+                                                        /p:UserName="\$user" `
+                                                        /p:Password="\$pass" `
+                                                        /p:Configuration=${CONFIGURATION} `
+                                                        /p:AllowUntrustedCertificate=true
+                                                """
+                                            }
+                                        }
+                                        apisExitosas << api
+                                    }
                                 } catch (err) {
                                     echo "❌ Error en ${api}: ${err}"
                                     apisFallidas << api
                                 }
                             }
                         }
+
+                        // Ejecutar todas las etapas en paralelo
+                        parallel parallelStages
                     }
                 }
             }
@@ -137,8 +144,6 @@ def call(Map config) {
                         ENVIRONMENT: config.AMBIENTE
                     ])
                 }
-
-              
             }
         }
     }
