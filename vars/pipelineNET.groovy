@@ -47,6 +47,17 @@ def call(Map config) {
                         def configCompleto = new groovy.json.JsonSlurperClassic().parseText(env.CONFIG_COMPLETO)
 
                         for (api in apis) {
+
+
+                              stage("Restore ${api}") {
+                                dir("${configCompleto.APIS[api].REPO_PATH}") {
+                                    powershell """
+                                        Write-Host "📄 Restaurando dependencias de ${api}..."
+                                        dotnet restore ${api}.csproj
+                                    """
+                                }
+                            }
+
                             stage("Deploy ${api}") {
                                 try {
                                     def apiConfig = [
@@ -64,11 +75,9 @@ def call(Map config) {
                                         withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                                            powershell """
 
-                                            Write-Host "🔐 Versión de Protocolo de Seguridad configurada: \$([System.Net.ServicePointManager]::SecurityProtocol)"
+                                          
                                             
-                                            Write-Host "📄 Restaurando y compilando ${api}..."
-                                            dotnet restore ${api}.csproj
-                                            dotnet build ${api}.csproj --configuration ${env.CONFIGURATION} --no-restore
+                             
                                             
                                             Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
                                             [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
