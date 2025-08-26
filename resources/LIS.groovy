@@ -268,7 +268,7 @@ return [
                 Colombia_Test: "",
                 Colombia_Demo: "PROFILE_LIS_IncomeResult_COLOMBIA_DEMO",
                 Colombia_PRE_PRODUCCION: "",
-                Latam_Demo: "",
+                Latam_Demo: "PROFILE_LIS_IncomeResult_LATAM_DEMO",
                 Aimsa_Demo: "PROFILE_LIS_IncomeResult_AIMSA_DEMO",
                 Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_IncomeResult_AIMSA_DEMO",
                 MX_Test: ""
