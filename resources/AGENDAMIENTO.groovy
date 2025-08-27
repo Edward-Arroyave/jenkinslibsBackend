@@ -17,9 +17,9 @@ return [
             ]
         ],
         Api_ProcesosAuto: [
-            REPO_PATH: "${env.REPO_PATH}/Api_ProcesosAuto",
+            REPO_PATH: "${env.REPO_PATH}/Agendamiento.ProcesosAuto/Api_ProcesosAuto",
             CREDENCIALES: [
-                demo: "PROFILE_Api_ProcesosAuto_TEST",
+                demo: "",
                 test: "PROFILE_Api_ProcesosAuto_TEST"
             ],
             URL: [
