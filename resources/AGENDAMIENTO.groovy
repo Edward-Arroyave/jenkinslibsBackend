@@ -24,7 +24,7 @@ return [
             ],
             URL: [
                 demo: "",
-                test: ""
+                test: "https://agendamiento-backend-ta-pruebas-cva3b9b3eubff3gf.eastus2-01.azurewebsites.net/"
             ]
         ]
     ]
