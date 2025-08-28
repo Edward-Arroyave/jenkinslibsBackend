@@ -67,6 +67,19 @@ def call(Map config) {
                                 try {
                                     echo "🔹 ========== INICIANDO DESPLIEGUE: ${api} =========="
                                     
+                                    stage("Validar SDK ${api}") {
+                                        dir("${configCompleto.APIS[api].REPO_PATH}") {
+                                            script {
+                                                def csproj = readFile(file: "${api}.csproj")
+                                                if (csproj.contains("<TargetFrameworkVersion>v4")) {
+                                                    error("❌ El proyecto ${api} es .NET Framework 4.x y este pipeline NO soporta ese SDK")
+                                                } else {
+                                                    echo "✅ El proyecto ${api} es compatible (.NET Core/5+)"
+                                                }
+                                            }
+                                        }
+                                    }
+
                                     // Stage de Restore
                                     stage("Restore ${api}") {
                                         dir("${configCompleto.APIS[api].REPO_PATH}") {
