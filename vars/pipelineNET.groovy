@@ -200,10 +200,7 @@ def call(Map config) {
                     sendNotificationTeamsNET([
                         APIS_SUCCESSFUL: APIS_SUCCESSFUL,
                         APIS_FAILURE: APIS_FAILURE,
-                        ENVIRONMENT: config.AMBIENTE,
-                        BUILD_NUMBER: env.BUILD_NUMBER,
-                        BUILD_URL: env.BUILD_URL,
-                        DURATION: currentBuild.durationString
+                        ENVIRONMENT: config.AMBIENTE
                     ])
                     
                     echo "📧 Notificación enviada a Teams"
