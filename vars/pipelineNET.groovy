@@ -177,6 +177,14 @@ def call(Map config) {
                     }
                     
                     echo "⏰ Duración total: ${currentBuild.durationString}"
+
+                    sendNotificationTeamsNET([
+                        APIS_SUCCESSFUL:  apisExitosas.join(', '),
+                        APIS_FAILURE: apisFallidas.join(', '),
+                        ENVIRONMENT: config.AMBIENTE
+                    ])
+                    
+                    echo "📧 Notificación enviada a Teams"
                 }
             }
             
@@ -192,20 +200,8 @@ def call(Map config) {
                 echo '⚠️  DESPLIEGUE FINALIZADO CON ALGUNOS ERRORES'
             }
             
-            cleanup {
-                script {
-                    def APIS_SUCCESSFUL = apisExitosas.join(', ')}
-                    def APIS_FAILURE = apisFallidas.join(', ')}
-                    
-                    sendNotificationTeamsNET([
-                        APIS_SUCCESSFUL: APIS_SUCCESSFUL,
-                        APIS_FAILURE: APIS_FAILURE,
-                        ENVIRONMENT: config.AMBIENTE
-                    ])
-                    
-                    echo "📧 Notificación enviada a Teams"
-                }
-            }
+       
+          
         }
     }
 }
