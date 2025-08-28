@@ -194,8 +194,8 @@ def call(Map config) {
             
             cleanup {
                 script {
-                    def APIS_SUCCESSFUL = apisExitosas ? "✅ ${apisExitosas.join(', ')}" : "❌ Ninguna API exitosa"
-                    def APIS_FAILURE = apisFallidas ? "❌ ${apisFallidas.join(', ')}" : "✅ Todas las APIs exitosas"
+                    def APIS_SUCCESSFUL = apisExitosas.join(', ')}
+                    def APIS_FAILURE = apisFallidas.join(', ')}
                     
                     sendNotificationTeamsNET([
                         APIS_SUCCESSFUL: APIS_SUCCESSFUL,
