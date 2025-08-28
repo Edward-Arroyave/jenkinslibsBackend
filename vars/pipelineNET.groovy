@@ -87,12 +87,7 @@ def call(Map config) {
                                                 """
                                             }
 
-                                            stage("Build ${api} (.NET 4.x)") {
-                                                bat """
-                                                    echo 🔨 Compilando proyecto .NET Framework: ${api}...
-                                                    "C:\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe" ${api}.csproj /p:Configuration=${CONFIGURATION} /p:DeployOnBuild=true /p:OutputPath=publish
-                                                """
-                                            }
+                                          
 
                                             stage("Deploy ${api} (.NET 4.x)") {
                                                 def apiConfig = [
