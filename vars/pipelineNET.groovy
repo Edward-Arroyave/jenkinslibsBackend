@@ -68,26 +68,32 @@ def call(Map config) {
                                     dir("${configCompleto.APIS[api].REPO_PATH}") {
                                         def csproj = readFile(file: "${api}.csproj")
                                         if (csproj.contains("<TargetFrameworkVersion>v4")) {
-                                            
-                                            echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
-                                                 // Restaurar biblioteca .NET Standard 2.0
-                                            dir("${env.REPO_PATH}/ViewModels") {
-                                                stage("Restore ViewModels (.NET Standard 2.0)") {
-                                                    powershell """
-                                                        Write-Host "📄 Restaurando paquetes NuGet para ViewModels..."
-                                                        dotnet restore ViewModels.csproj --verbosity normal
-                                                    """
+
+
+                                        echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
+                                         
+                                        stage('Preparar Dependencias') {
+                                            steps {
+                                                script {
+                                                    echo "📦 Preparando dependencias .NET Standard..."
+                                                    
+                                                    // Restaurar ViewModels con dotnet restore
+                                                    dir("${env.REPO_PATH}/ViewModels") {
+                                                        powershell """
+                                                            Write-Host "📄 Restaurando paquetes NuGet para ViewModels..."
+                                                            dotnet restore ViewModels.csproj --verbosity normal
+                                                        """
+                                                    }
                                                 }
                                             }
+                                        }
 
-                                            stage("Restore ${api} (.NET 4.x)") {
+                                         stage("Restore ${api} (.NET 4.x)") {
                                                 bat """
                                                     echo 📦 Restaurando paquetes NuGet para ${api}...
-                                                    nuget restore ${api}.csproj -PackagesDirectory ..\\packages
+                                                    nuget restore ${api}.csproj -PackagesDirectory ..\\packages -IgnoreFailedSources
                                                 """
                                             }
-
-                                          
 
                                             stage("Deploy ${api} (.NET 4.x)") {
                                                 def apiConfig = [
@@ -95,12 +101,17 @@ def call(Map config) {
                                                     CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
                                                     URL: configCompleto.APIS[api].URL[config.AMBIENTE]
                                                 ]
+                                                
+                                                // Extraer solo el nombre del servidor de la URL
+                                                def serverName = apiConfig.URL.replaceFirst("https?://", "").replaceFirst("/.*", "")
+                                                
                                                 echo "🌍 Publicando en IIS para ${api}"
                                                 bat """
-                                                    xcopy /Y /E publish \\\\${apiConfig.URL}\\inetpub\\wwwroot\\${api}
+                                                    echo 📂 Copiando archivos a \\\\${serverName}\\inetpub\\wwwroot\\${api}
+                                                    xcopy /Y /E . \\\\${serverName}\\inetpub\\wwwroot\\${api}
                                                 """
                                             }
-
+                                      
 
 
                                         } else {
