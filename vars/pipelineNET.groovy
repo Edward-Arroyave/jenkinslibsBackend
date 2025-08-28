@@ -3,17 +3,18 @@ def call(Map config) {
     if (apis instanceof String) {
         apis = apis.split(',').collect { it.trim() }
     }
-
-    echo "APIs seleccionadas para despliegue: ${apis.join(', ')}"
-
+    
+    echo "🚀 =============================== INICIO DESPLIEGUE ==============================="
+    echo "📋 APIs seleccionadas para despliegue: ${apis.join(', ')}"
+    echo "🌍 Ambiente: ${config.AMBIENTE}"
+    echo "📦 Producto: ${config.PRODUCT}"
+    
     def apisExitosas = []
     def apisFallidas = []
 
     pipeline {
-        agent {
-            label 'Windws-node'
-        }
-
+        agent { label 'Windws-node' }
+        
         environment {
             BUILD_FOLDER = "${env.WORKSPACE}/${env.BUILD_ID}"
             REPO_PATH = "${BUILD_FOLDER}/repo"
@@ -21,22 +22,32 @@ def call(Map config) {
             CONFIGURATION = 'Release'
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
         }
-
+        
         stages {
             stage('Load Config & Clone Repo') {
                 steps {
                     script {
-                        echo "🔄 Cargando configuración..."
-                        def contenido = libraryResource "${config.PRODUCT}.groovy"
-                        def configCompleto = evaluate(contenido)
-
-                        def branch = configCompleto.AMBIENTES[config.AMBIENTE].BRANCH
-                        echo "🌿 Rama a usar para el despliegue: ${branch}"
-
-                        cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
-
-                        // Guardamos configCompleto para el resto
-                        env.CONFIG_COMPLETO = groovy.json.JsonOutput.toJson(configCompleto)
+                        echo "🔄 Cargando configuración desde: ${config.PRODUCT}.groovy"
+                        
+                        try {
+                            def contenido = libraryResource "${config.PRODUCT}.groovy"
+                            def configCompleto = evaluate(contenido)
+                            def branch = configCompleto.AMBIENTES[config.AMBIENTE].BRANCH
+                            
+                            echo "✅ Configuración cargada exitosamente"
+                            echo "🌿 Rama configurada: ${branch}"
+                            echo "📁 Ruta del repositorio: ${env.REPO_PATH}"
+                            
+                            cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
+                            
+                            // Guardamos configCompleto para el resto
+                            env.CONFIG_COMPLETO = groovy.json.JsonOutput.toJson(configCompleto)
+                            
+                        } catch (Exception e) {
+                            echo "❌ ERROR: No se pudo cargar la configuración"
+                            echo "📝 Detalles: ${e.message}"
+                            error("Fallo en carga de configuración")
+                        }
                     }
                 }
             }
@@ -46,19 +57,28 @@ def call(Map config) {
                     script {
                         def configCompleto = new groovy.json.JsonSlurperClassic().parseText(env.CONFIG_COMPLETO)
                         
+                        echo "🎯 Iniciando despliegue de ${apis.size()} APIs en paralelo"
+                        
                         // Crear mapa para etapas paralelas
                         def parallelStages = [:]
                         
                         apis.each { api ->
                             parallelStages["Deploy-${api}"] = {
                                 try {
+                                    echo "🔹 ========== INICIANDO DESPLIEGUE: ${api} =========="
+                                    
                                     // Stage de Restore
                                     stage("Restore ${api}") {
                                         dir("${configCompleto.APIS[api].REPO_PATH}") {
+                                            echo "📦 Restaurando dependencias para: ${api}"
+                                            echo "📁 Directorio: ${configCompleto.APIS[api].REPO_PATH}"
+                                            
                                             powershell """
-                                                Write-Host "📄 Restaurando dependencias de ${api}..."
-                                                dotnet restore ${api}.csproj
+                                            Write-Host "📄 Restaurando dependencias de ${api}..."
+                                            dotnet restore ${api}.csproj --verbosity normal
                                             """
+                                            
+                                            echo "✅ Restore completado para: ${api}"
                                         }
                                     }
 
@@ -69,80 +89,117 @@ def call(Map config) {
                                             CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
                                             URL: configCompleto.APIS[api].URL[config.AMBIENTE]
                                         ]
-
-                                        echo "=== Desplegando API: ${api} ==="
-                                        echo "Ruta proyecto: ${apiConfig.CS_PROJ_PATH}"
-                                        echo "Credenciales usadas: ${apiConfig.CREDENTIALS_ID}"
-                                        echo "URL de despliegue: ${apiConfig.URL}"
-
+                                        
+                                        echo "🌐 === CONFIGURACIÓN DESPLIEGUE ${api} ==="
+                                        echo "📂 Ruta proyecto: ${apiConfig.CS_PROJ_PATH}"
+                                        echo "🔑 Credenciales: ${apiConfig.CREDENTIALS_ID}"
+                                        echo "🌍 URL destino: ${apiConfig.URL}"
+                                        echo "⚙️  Configuración: ${CONFIGURATION}"
+                                        
                                         dir("${apiConfig.CS_PROJ_PATH}") {
                                             withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                               powershell """
-                                                    Write-Host "📄 Leyendo perfil de publicación desde: \$env:PUBLISH_SETTINGS"
-                                                    [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                                                    \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
-
-                                                    if (-not \$profile) { Write-Error "❌ No se encontró un perfil válido"; exit 1 }
-
-                                                    Write-Host "🔑 Usando perfil: \$(\$profile.profileName)"
-                                                    \$url  = \$profile.publishUrl
-                                                    \$site = \$profile.msdeploySite
-                                                    \$user = \$profile.userName
-                                                    \$pass = \$profile.userPWD
-
-                                                    \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
-                                                    if (-not \$projectFile) { Write-Error "❌ No se encontró el archivo .csproj"; exit 1 }
-
-                                                    Write-Host "🏗 Publicando proyecto: \$projectFile"
-
-                                                    # Ejecuta msbuild con las variables de entorno configuradas
-                                                    dotnet msbuild "\$projectFile" `
-                                                        /p:DeployOnBuild=true `
-                                                        /p:WebPublishMethod=MSDeploy `
-                                                        /p:MsDeployServiceUrl="\$url" `
-                                                        /p:DeployIisAppPath="\$site" `
-                                                        /p:UserName="\$user" `
-                                                        /p:Password="\$pass" `
-                                                        /p:Configuration=${CONFIGURATION} `
-                                                        /p:AllowUntrustedCertificate=true
+                                                powershell """
+                                                Write-Host "📋 Leyendo perfil de publicación..."
+                                                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                                                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+                                                
+                                                if (-not \$profile) {
+                                                    Write-Error "❌ No se encontró un perfil válido de MSDeploy"
+                                                    exit 1
+                                                }
+                                                
+                                                Write-Host "✅ Perfil encontrado: \$(\$profile.profileName)"
+                                                Write-Host "🔗 URL: \$(\$profile.publishUrl)"
+                                                Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
+                                                
+                                                \$url = \$profile.publishUrl
+                                                \$site = \$profile.msdeploySite
+                                                \$user = \$profile.userName
+                                                \$pass = \$profile.userPWD
+                                                
+                                                \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                                                if (-not \$projectFile) {
+                                                    Write-Error "❌ No se encontró el archivo .csproj"
+                                                    exit 1
+                                                }
+                                                
+                                                Write-Host "🚀 Iniciando publicación de: \$projectFile"
+                                                
+                                                # Ejecuta msbuild con las variables de entorno configuradas
+                                                dotnet msbuild "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:normal
+                                                
+                                                Write-Host "✅ Publicación completada exitosamente"
                                                 """
                                             }
                                         }
+                                        
                                         apisExitosas << api
+                                        echo "🎉 DESPLIEGUE EXITOSO: ${api}"
                                     }
+                                    
                                 } catch (err) {
-                                    echo "❌ Error en ${api}: ${err}"
+                                    echo "❌ ERROR EN DESPLIEGUE ${api}: ${err.message}"
+                                    echo "📝 Stack trace: ${err.stackTrace}"
                                     apisFallidas << api
+                                    currentBuild.result = 'UNSTABLE' // Marcar como inestable pero continuar
                                 }
+                                
+                                echo "🔸 ========== FIN DESPLIEGUE: ${api} =========="
                             }
                         }
 
                         // Ejecutar todas las etapas en paralelo
+                        echo "⏰ Ejecutando despliegues en paralelo..."
                         parallel parallelStages
                     }
                 }
             }
         }
-
+        
         post {
+            always {
+                echo "📊 =============================== RESUMEN DESPLIEGUE ==============================="
+                echo "✅ APIs exitosas: ${apisExitosas.size()}/${apis.size()}"
+                echo "❌ APIs fallidas: ${apisFallidas.size()}/${apis.size()}"
+                
+                if (apisExitosas) {
+                    echo "🎯 Exitosas: ${apisExitosas.join(', ')}"
+                }
+                
+                if (apisFallidas) {
+                    echo "💥 Fallidas: ${apisFallidas.join(', ')}"
+                }
+                
+                echo "⏰ Duración total: ${currentBuild.durationString}"
+            }
+            
             success {
                 echo '🎉 DESPLIEGUE FINALIZADO CON ÉXITO'
             }
+            
             failure {
-                echo '💥 ERROR DURANTE EL DESPLIEGUE'
+                echo '💥 DESPLIEGUE FINALIZADO CON ERRORES'
             }
-            always {
+            
+            unstable {
+                echo '⚠️  DESPLIEGUE FINALIZADO CON ALGUNOS ERRORES'
+            }
+            
+            cleanup {
                 script {
-                    def APIS_FAILURE = ""
-                    def APIS_SUCCESSFUL = ""
-                    if (apisExitosas) { APIS_SUCCESSFUL += "✅ ${apisExitosas.join(', ')}\n" }
-                    if (apisFallidas) { APIS_FAILURE    += "❌ ${apisFallidas.join(', ')}" }
-
+                    def APIS_SUCCESSFUL = apisExitosas ? "✅ ${apisExitosas.join(', ')}" : "❌ Ninguna API exitosa"
+                    def APIS_FAILURE = apisFallidas ? "❌ ${apisFallidas.join(', ')}" : "✅ Todas las APIs exitosas"
+                    
                     sendNotificationTeamsNET([
                         APIS_SUCCESSFUL: APIS_SUCCESSFUL,
                         APIS_FAILURE: APIS_FAILURE,
-                        ENVIRONMENT: config.AMBIENTE
+                        ENVIRONMENT: config.AMBIENTE,
+                        BUILD_NUMBER: env.BUILD_NUMBER,
+                        BUILD_URL: env.BUILD_URL,
+                        DURATION: currentBuild.durationString
                     ])
+                    
+                    echo "📧 Notificación enviada a Teams"
                 }
             }
         }
