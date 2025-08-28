@@ -184,7 +184,7 @@ def call(Map config) {
                                                         Write-Host "🚀 Publicando: $projectFile"
 
                                                         # RUTA COMPLETA DE MSBUILD
-                                                        $msbuildPath = 'C:\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe'
+                                                       \$msbuildPath = "C:\\BuildTool\\MSBuild\\Current\\Bin\\MSBuild.exe"
 
                                                         & "$msbuildPath" "$projectFile" `
                                                             /p:DeployOnBuild=true `
