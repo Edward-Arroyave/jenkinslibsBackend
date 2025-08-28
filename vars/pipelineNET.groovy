@@ -70,25 +70,22 @@ def call(Map config) {
                                         if (csproj.contains("<TargetFrameworkVersion>v4")) {
 
 
-                                        echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
-                                         
-                                        stage('Preparar Dependencias') {
-                                            steps {
-                                                script {
-                                                    echo "📦 Preparando dependencias .NET Standard..."
-                                                    
-                                                    // Restaurar ViewModels con dotnet restore
-                                                    dir("${env.REPO_PATH}/ViewModels") {
-                                                        powershell """
-                                                            Write-Host "📄 Restaurando paquetes NuGet para ViewModels..."
-                                                            dotnet restore ViewModels.csproj --verbosity normal
-                                                        """
-                                                    }
+                                            echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
+
+                                            // Preparar dependencias SOLO para .NET Framework 4.x
+                                            stage("Preparar Dependencias (.NET 4.x)") {
+                                                echo "📦 Preparando dependencias .NET Standard..."
+                                                
+                                                // Restaurar ViewModels con dotnet restore
+                                                dir("${env.REPO_PATH}/ViewModels") {
+                                                    powershell """
+                                                        Write-Host "📄 Restaurando paquetes NuGet para ViewModels..."
+                                                        dotnet restore ViewModels.csproj --verbosity normal
+                                                    """
                                                 }
                                             }
-                                        }
 
-                                         stage("Restore ${api} (.NET 4.x)") {
+                                            stage("Restore ${api} (.NET 4.x)") {
                                                 bat """
                                                     echo 📦 Restaurando paquetes NuGet para ${api}...
                                                     nuget restore ${api}.csproj -PackagesDirectory ..\\packages -IgnoreFailedSources
