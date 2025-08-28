@@ -160,7 +160,7 @@ def call(Map config) {
 
                                                 dir("${apiConfig.CS_PROJ_PATH}") {
                                                     withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                                      powershell '''
+                                                     powershell '''
                                                         Write-Host "📋 Leyendo perfil de publicación..."
                                                         [xml]$pub = Get-Content "$env:PUBLISH_SETTINGS"
                                                         $profile = $pub.publishData.publishProfile | Where-Object { $_.publishMethod -eq "MSDeploy" }
@@ -186,18 +186,18 @@ def call(Map config) {
                                                         # RUTA COMPLETA DE MSBUILD
                                                         $msbuildPath = "C:\\BuildTool\\MSBuild\\Current\\Bin\\MSBuild.exe"
 
-                                                        & "$msbuildPath" "$projectFile" `
-                                                            /p:DeployOnBuild=true `
-                                                            /p:WebPublishMethod=MSDeploy `
-                                                            /p:MsDeployServiceUrl="$url" `
-                                                            /p:DeployIisAppPath="$site" `
-                                                            /p:UserName="$user" `
-                                                            /p:Password="$pass" `
-                                                            /p:Configuration='${CONFIGURATION}' `
-                                                            /p:AllowUntrustedCertificate=true `
-                                                            /verbosity:normal `
+                                                        & "$msbuildPath" "$projectFile" ``
+                                                            /p:DeployOnBuild=true ``
+                                                            /p:WebPublishMethod=MSDeploy ``
+                                                            /p:MsDeployServiceUrl="$url" ``
+                                                            /p:DeployIisAppPath="$site" ``
+                                                            /p:UserName="$user" ``
+                                                            /p:Password="$pass" ``
+                                                            /p:Configuration='${CONFIGURATION}' ``
+                                                            /p:AllowUntrustedCertificate=true ``
+                                                            /verbosity:normal ``
                                                             /p:VisualStudioVersion=17.0
-                                                    '''
+                                                        '''
 
                                                     }
                                                 }
