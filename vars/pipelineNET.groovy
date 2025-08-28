@@ -158,19 +158,26 @@ def call(Map config) {
         
         post {
             always {
-                echo "📊 =============================== RESUMEN DESPLIEGUE ==============================="
-                echo "✅ APIs exitosas: ${apisExitosas.size()}/${apis.size()}"
-                echo "❌ APIs fallidas: ${apisFallidas.size()}/${apis.size()}"
-                
-                if (apisExitosas) {
-                    echo "🎯 Exitosas: ${apisExitosas.join(', ')}"
+                script {
+                    echo "📊 =============================== RESUMEN DESPLIEGUE ==============================="
+                    echo "✅ APIs exitosas: ${apisExitosas.size()}/${apis.size()}"
+                    echo "❌ APIs fallidas: ${apisFallidas.size()}/${apis.size()}"
+                    
+                    // CORRECCIÓN: Las sentencias if deben estar dentro de echo o steps
+                    if (apisExitosas) {
+                        echo "🎯 Exitosas: ${apisExitosas.join(', ')}"
+                    } else {
+                        echo "⚠️  No hubo APIs exitosas"
+                    }
+                    
+                    if (apisFallidas) {
+                        echo "💥 Fallidas: ${apisFallidas.join(', ')}"
+                    } else {
+                        echo "✅ Todas las APIs fueron exitosas"
+                    }
+                    
+                    echo "⏰ Duración total: ${currentBuild.durationString}"
                 }
-                
-                if (apisFallidas) {
-                    echo "💥 Fallidas: ${apisFallidas.join(', ')}"
-                }
-                
-                echo "⏰ Duración total: ${currentBuild.durationString}"
             }
             
             success {
