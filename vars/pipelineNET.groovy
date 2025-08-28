@@ -186,17 +186,21 @@ def call(Map config) {
                                                         # RUTA COMPLETA DE MSBUILD
                                                         $msbuildPath = "C:\\BuildTool\\MSBuild\\Current\\Bin\\MSBuild.exe"
 
-                                                        & "$msbuildPath" "$projectFile" ' +
-                                                            '/p:DeployOnBuild=true ' +
-                                                            '/p:WebPublishMethod=MSDeploy ' +
-                                                            '/p:MsDeployServiceUrl="' + $url + '" ' +
-                                                            '/p:DeployIisAppPath="' + $site + '" ' +
-                                                            '/p:UserName="' + $user + '" ' +
-                                                            '/p:Password="' + $pass + '" ' +
-                                                            '/p:Configuration=''${CONFIGURATION}'' ' +
-                                                            '/p:AllowUntrustedCertificate=true ' +
-                                                            '/verbosity:normal ' +
-                                                            '/p:VisualStudioVersion=17.0'
+                                                        $arguments = @(
+                                                            "`"$projectFile`"",
+                                                            "/p:DeployOnBuild=true",
+                                                            "/p:WebPublishMethod=MSDeploy",
+                                                            "/p:MsDeployServiceUrl=`"$url`"",
+                                                            "/p:DeployIisAppPath=`"$site`"",
+                                                            "/p:UserName=`"$user`"",
+                                                            "/p:Password=`"$pass`"",
+                                                            "/p:Configuration=`${CONFIGURATION}`",
+                                                            "/p:AllowUntrustedCertificate=true",
+                                                            "/verbosity:normal",
+                                                            "/p:VisualStudioVersion=17.0"
+                                                        )
+
+                                                        & $msbuildPath $arguments
                                                         '''
 
                                                     }
