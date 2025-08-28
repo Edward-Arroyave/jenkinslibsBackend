@@ -70,6 +70,15 @@ def call(Map config) {
                                         if (csproj.contains("<TargetFrameworkVersion>v4")) {
                                             
                                             echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
+                                                 // Restaurar biblioteca .NET Standard 2.0
+                                            dir("${env.REPO_PATH}/ViewModels") {
+                                                stage("Restore ViewModels (.NET Standard 2.0)") {
+                                                    powershell """
+                                                        Write-Host "📄 Restaurando paquetes NuGet para ViewModels..."
+                                                        dotnet restore ViewModels.csproj --verbosity normal
+                                                    """
+                                                }
+                                            }
 
                                             stage("Restore ${api} (.NET 4.x)") {
                                                 bat """
