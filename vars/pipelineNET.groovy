@@ -69,25 +69,33 @@ def call(Map config) {
                                         def csproj = readFile(file: "${api}.csproj")
                                         if (csproj.contains("<TargetFrameworkVersion>v4")) {
                                             echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
-                                            
-                                           stage("Build ${api} (.NET 4.x)") {
-                                                bat """
-                                                    echo Compilando proyecto .NET Framework: ${api}
-                                                    "C:\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe" ${api}.csproj /p:Configuration=${CONFIGURATION} /p:DeployOnBuild=true /p:OutputPath=publish
-                                                """
-                                            }
 
-                                            stage("Deploy ${api} (.NET 4.x)") {
-                                                def apiConfig = [
-                                                    CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
-                                                    CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
-                                                    URL: configCompleto.APIS[api].URL[config.AMBIENTE]
-                                                ]
-                                                echo "🌍 Publicando en IIS para ${api}"
-                                                bat """
-                                                    xcopy /Y /E publish \\\\${apiConfig.URL}\\inetpub\\wwwroot\\${api}
-                                                """
-                                            }
+                                                stage("Restore ${api} (.NET 4.x)") {
+                                                    bat """
+                                                        echo Restaurando paquetes NuGet para ${api}
+                                                        nuget restore ${api}.csproj
+                                                    """
+                                                }
+
+                                                stage("Build ${api} (.NET 4.x)") {
+                                                    bat """
+                                                        echo Compilando proyecto .NET Framework: ${api}
+                                                        "C:\\BuildTools\\MSBuild\\Current\\Bin\\amd64\\MSBuild.exe" ${api}.csproj /p:Configuration=${CONFIGURATION} /p:DeployOnBuild=true /p:OutputPath=publish
+                                                    """
+                                                }
+
+                                                stage("Deploy ${api} (.NET 4.x)") {
+                                                    def apiConfig = [
+                                                        CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
+                                                        CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
+                                                        URL: configCompleto.APIS[api].URL[config.AMBIENTE]
+                                                    ]
+                                                    echo "🌍 Publicando en IIS para ${api}"
+                                                    bat """
+                                                        xcopy /Y /E publish \\\\${apiConfig.URL}\\inetpub\\wwwroot\\${api}
+                                                    """
+                                                }
+
 
 
                                         } else {
