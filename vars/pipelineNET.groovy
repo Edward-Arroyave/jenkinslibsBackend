@@ -100,35 +100,31 @@ def call(Map config) {
 
                                                 dir("${apiConfig.CS_PROJ_PATH}") {
                                                     withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                                                        powershell """
-                                                            Write-Host "📋 Leyendo perfil de publicación..."
-                                                            [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                                                            \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
-                                                            
-                                                            if (-not \$profile) {
-                                                                Write-Error "❌ No se encontró un perfil válido de MSDeploy"
-                                                                exit 1
-                                                            }
-                                                            
-                                                            Write-Host "✅ Perfil encontrado: \$(\$profile.profileName)"
-                                                            Write-Host "🔗 URL: \$(\$profile.publishUrl)"
-                                                            Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
-                                                            
-                                                            \$url = \$profile.publishUrl
-                                                            \$site = \$profile.msdeploySite
-                                                            \$user = \$profile.userName
-                                                            \$pass = \$profile.userPWD
-                                                            
-                                                            \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
-                                                            
-                                                            Write-Host "🚀 Publicando: \$projectFile"
-                                                            
-                                                            # Definir la ruta completa de MSBuild
-                                                            $msbuildPath = "C:\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe"
+                                                      powershell """
+                                                        `$pub = [xml](Get-Content "`$env:PUBLISH_SETTINGS")
+                                                        `$profile = `$pub.publishData.publishProfile | Where-Object { `$_.publishMethod -eq "MSDeploy" }
+                                                        
+                                                        if (-not `$profile) {
+                                                            Write-Error "❌ No se encontró un perfil válido de MSDeploy"
+                                                            exit 1
+                                                        }
+                                                        
+                                                        Write-Host "✅ Perfil encontrado: `$(`$profile.profileName)"
+                                                        
+                                                        `$url = `$profile.publishUrl
+                                                        `$site = `$profile.msdeploySite
+                                                        `$user = `$profile.userName
+                                                        `$pass = `$profile.userPWD
+                                                        `$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                                                        
+                                                        Write-Host "🚀 Publicando: `$projectFile"
+                                                        
+                                                        # Definir la ruta completa de MSBuild
+                                                        `$msbuildPath = "C:\\BuildTools\\MSBuild\\Current\\Bin\\amd64\\MSBuild.exe"
 
-                                                            # USAR MSBUILD ESPECÍFICO EN LUGAR DE DOTNET MSBUILD PARA .NET FRAMEWORK 4.x
-                                                            & "$msbuildPath" "$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="$url" /p:DeployIisAppPath="$site" /p:UserName="$user" /p:Password="$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:normal /p:VisualStudioVersion=16.0
-                                                        """
+                                                        # USAR MSBUILD ESPECÍFICO
+                                                        & "`$msbuildPath" "`$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="`$url" /p:DeployIisAppPath="`$site" /p:UserName="`$user" /p:Password="`$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:normal /p:VisualStudioVersion=16.0
+                                                    """
                                                     }
                                                 }
                                             }
