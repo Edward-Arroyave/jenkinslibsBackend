@@ -70,10 +70,10 @@ def call(Map config) {
                                         if (csproj.contains("<TargetFrameworkVersion>v4")) {
                                             echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
                                             
-                                            stage("Build ${api} (.NET 4.x)") {
+                                           stage("Build ${api} (.NET 4.x)") {
                                                 bat """
                                                     echo Compilando proyecto .NET Framework: ${api}
-                                                    "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe" ${api}.csproj /p:Configuration=${CONFIGURATION} /p:DeployOnBuild=true /p:OutputPath=publish
+                                                    "C:\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe" ${api}.csproj /p:Configuration=${CONFIGURATION} /p:DeployOnBuild=true /p:OutputPath=publish
                                                 """
                                             }
 
