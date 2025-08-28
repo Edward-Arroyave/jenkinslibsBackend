@@ -70,7 +70,7 @@ def call(Map config) {
                                         if (csproj.contains("<TargetFrameworkVersion>v4")) {
 
 
-                                            echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
+                                                  echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
 
                                             // Preparar dependencias SOLO para .NET Framework 4.x
                                             stage("Preparar Dependencias (.NET 4.x)") {
@@ -88,10 +88,9 @@ def call(Map config) {
                                             stage("Restore ${api} (.NET 4.x)") {
                                                 bat """
                                                     echo 📦 Restaurando paquetes NuGet para ${api}...
-                                                    nuget restore ${api}.csproj -PackagesDirectory ..\\packages -IgnoreFailedSources
+                                                    nuget restore ${api}.csproj -PackagesDirectory ..\\packages
                                                 """
                                             }
-
                                             stage("Deploy ${api} (.NET 4.x)") {
                                                 def apiConfig = [
                                                     CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
