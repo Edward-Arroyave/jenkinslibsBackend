@@ -68,51 +68,34 @@ def call(Map config) {
                                     dir("${configCompleto.APIS[api].REPO_PATH}") {
                                         def csproj = readFile(file: "${api}.csproj")
                                         if (csproj.contains("<TargetFrameworkVersion>v4")) {
+                                            
                                             echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
-
-                                            stage("Build ${api} (.NET 4.x)") {
-                                                steps {
-                                                    script {
-                                                        echo "🔄 Restaurando y compilando proyecto .NET Framework 4.x: ${api}"
-                                                        
-                                                        // Restauración de paquetes NuGet
-                                                        bat """
-                                                            echo 📦 Restaurando paquetes NuGet...
-                                                            "C:\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe" ${api}.csproj /t:Restore /p:Configuration=${CONFIGURATION} /p:RestorePackagesPath="..\\packages"
-                                                        """
-                                                        
-                                                        // Verificar que los paquetes se restauraron
-                                                        bat """
-                                                            echo 🔍 Verificando paquetes restaurados...
-                                                            if exist "..\\packages" (
-                                                                echo ✅ Paquetes NuGet restaurados correctamente
-                                                                dir "..\\packages"
-                                                            ) else (
-                                                                echo ❌ No se encontraron paquetes restaurados
-                                                            )
-                                                        """
-                                                        
-                                                        // Compilación del proyecto
-                                                        bat """
-                                                            echo 🔨 Compilando proyecto...
-                                                            "C:\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe" ${api}.csproj /p:Configuration=${CONFIGURATION} /p:DeployOnBuild=true /p:OutputPath=publish /p:RestorePackagesPath="..\\packages"
-                                                        """
-                                                        
-                                                        // Verificar que la compilación fue exitosa
-                                                        bat """
-                                                            echo 🔍 Verificando compilación...
-                                                            if exist "publish" (
-                                                                echo ✅ Compilación exitosa
-                                                                dir "publish"
-                                                            ) else (
-                                                                echo ❌ La compilación falló
-                                                                exit 1
-                                                            )
-                                                        """
-                                                    }
+                                                
+                                                stage("Restore ${api} (.NET 4.x)") {
+                                                    bat """
+                                                        echo 📦 Restaurando paquetes NuGet para ${api}...
+                                                        "C:\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe" ${api}.csproj /t:Restore /p:Configuration=${CONFIGURATION} /p:RestorePackagesPath="..\\packages"
+                                                    """
                                                 }
-                                            }
 
+                                                stage("Build ${api} (.NET 4.x)") {
+                                                    bat """
+                                                        echo 🔨 Compilando proyecto .NET Framework: ${api}...
+                                                        "C:\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe" ${api}.csproj /p:Configuration=${CONFIGURATION} /p:DeployOnBuild=true /p:OutputPath=publish
+                                                    """
+                                                }
+
+                                                stage("Deploy ${api} (.NET 4.x)") {
+                                                    def apiConfig = [
+                                                        CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
+                                                        CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
+                                                        URL: configCompleto.APIS[api].URL[config.AMBIENTE]
+                                                    ]
+                                                    echo "🌍 Publicando en IIS para ${api}"
+                                                    bat """
+                                                        xcopy /Y /E publish \\\\${apiConfig.URL}\\inetpub\\wwwroot\\${api}
+                                                    """
+                                                }
 
 
                                         } else {
