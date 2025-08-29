@@ -73,6 +73,22 @@ def call(Map config) {
                                             echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
 
                                             def msbuildPath = "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\msbuild.exe"
+                                            stage("Fix LibGit2Sharp Props") {
+                                                    steps {
+                                                        powershell """
+                                                        \$propsFile = "..\\packages\\LibGit2Sharp.NativeBinaries.2.0.323\\build\\net46\\LibGit2Sharp.NativeBinaries.props"
+                                                        if (Test-Path \$propsFile) {
+                                                            \$content = Get-Content \$propsFile -Raw
+                                                            if (-not \$content.Contains('xmlns="http://schemas.microsoft.com/developer/msbuild/2003"')) {
+                                                                Write-Host "🔧 Corrigiendo archivo props de LibGit2Sharp..."
+                                                                \$content = \$content.Replace('<Project ToolsVersion="4.0">', '<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">')
+                                                                Set-Content \$propsFile \$content -Encoding UTF8
+                                                                Write-Host "✅ Archivo props corregido"
+                                                            }
+                                                        }
+                                                        """
+                                                }
+                                            }
 
                                             stage("Restore ${api} (.NET 4.x)") {
                                                 bat """
