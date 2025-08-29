@@ -72,7 +72,7 @@ def call(Map config) {
 
                                             echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
 
-                                         
+                                            def msbuildPath = "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\msbuild.exe"
 
                                             stage("Restore ${api} (.NET 4.x)") {
                                                 bat """
@@ -113,7 +113,7 @@ def call(Map config) {
                                                             Write-Host "🚀 Publicando: \$projectFile"
                                                             
                                                             # USAR MSBUILD EN LUGAR DE DOTNET MSBUILD PARA .NET FRAMEWORK 4.x
-                                                            .\\msbuild.exe  "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:normal /p:VisualStudioVersion=16.0
+                                                            & "${msbuildPath}" "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:normal /p:VisualStudioVersion=16.0
                                                         """
                                                     }
                                                 }
