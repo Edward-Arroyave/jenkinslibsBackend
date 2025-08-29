@@ -6,7 +6,7 @@ return [
 
     APIS: [
         ApiSoyVioleta: [
-            REPO_PATH: "${env.REPO_PATH}/ApiCrmVitalea",
+            REPO_PATH: "${env.REPO_PATH}/ApiSoyVioleta",
             CREDENCIALES: [
                 Test: "PROFILE_CTS_VIOLETA_ApiSoyVioleta_TEST",
                 Pre_Produccion: ""
