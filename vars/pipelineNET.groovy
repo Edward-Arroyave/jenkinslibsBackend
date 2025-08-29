@@ -113,7 +113,7 @@ def call(Map config) {
                                                             Write-Host "🚀 Publicando: \$projectFile"
                                                             
                                                             # USAR MSBUILD EN LUGAR DE DOTNET MSBUILD PARA .NET FRAMEWORK 4.x
-                                                            msbuild "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:normal /p:VisualStudioVersion=16.0
+                                                            .\msbuild.exe  "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:normal /p:VisualStudioVersion=16.0
                                                         """
                                                     }
                                                 }
