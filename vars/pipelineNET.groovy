@@ -191,6 +191,7 @@ def call(Map config) {
         
         post {
             always {
+
                 script {
                     echo "📊 =============================== RESUMEN DESPLIEGUE ==============================="
                     echo "✅ APIs exitosas: ${apisExitosas.size()}/${apis.size()}"
@@ -216,6 +217,7 @@ def call(Map config) {
                         ENVIRONMENT: config.AMBIENTE
                     ])
                 }
+                cleanWs()
             }
             
             success { echo '🎉 DESPLIEGUE FINALIZADO CON ÉXITO' }
