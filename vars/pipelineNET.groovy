@@ -13,7 +13,7 @@ def call(Map config) {
     def apisFallidas = []
 
     pipeline {
-        agent { label 'Windws-node' }
+        agent { label 'Windows-node' }
         
         environment {
             BUILD_FOLDER = "${env.WORKSPACE}/${env.BUILD_ID}"
