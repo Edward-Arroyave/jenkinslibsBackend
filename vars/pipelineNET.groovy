@@ -24,6 +24,12 @@ def call(Map config) {
         }
         
         stages {
+
+            stage('cleanup') {
+                steps {
+                    cleanWs()
+                }
+            }
             stage('Load Config & Clone Repo') {
                 steps {
                     script {
@@ -217,7 +223,7 @@ def call(Map config) {
                         ENVIRONMENT: config.AMBIENTE
                     ])
                 }
-                cleanWs()
+                cleanup()
             }
             
             success { echo '🎉 DESPLIEGUE FINALIZADO CON ÉXITO' }
