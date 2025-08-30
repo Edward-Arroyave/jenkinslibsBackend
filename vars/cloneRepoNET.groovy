@@ -8,41 +8,104 @@ def call(Map config) {
     echo "   📁 Path: ${config.repoPath}"
     echo "   🔗 URL: ${config.repoUrl}"
 
+    // Crear directorio si no existe
+    bat """
+        @echo off
+        if not exist "${config.repoPath}" (
+            mkdir "${config.repoPath}"
+        )
+    """
+
+    // Función para limpiar archivos de bloqueo
+    def cleanLockFiles = { repoPath ->
+        bat """
+            @echo off
+            echo 🧹 Cleaning lock files in: ${repoPath}
+            cd /d "${repoPath}"
+            
+            :: Eliminar archivos .lock en todas las subcarpetas relevantes
+            for /r . %%f in (*.lock) do (
+                echo Eliminando: %%f
+                del /f /q "%%f" 2>nul
+            )
+            
+            :: Eliminar específicamente en .git/refs/remotes/origin/
+            if exist ".git" (
+                cd .git
+                if exist "refs" (
+                    cd refs
+                    if exist "remotes" (
+                        cd remotes
+                        if exist "origin" (
+                            cd origin
+                            for /r . %%f in (*.lock) do (
+                                echo Eliminando lock file en origin: %%f
+                                del /f /q "%%f" 2>nul
+                            )
+                        )
+                    )
+                )
+            )
+        """
+    }
+
+    // Limpieza preventiva antes de clonar
+    cleanLockFiles(config.repoPath)
+
     dir(config.repoPath) {
-        checkout([
-            $class: 'GitSCM',
-            branches: [[name: "*/${config.branch}"]],
-            doGenerateSubmoduleConfigurations: false,
-            extensions: [
-                [$class: 'CloneOption', depth: 1, noTags: false, reference: '', shallow: true]
-            ],
-            userRemoteConfigs: [[
-                url: config.repoUrl,
-                credentialsId: 'GITHUB'
-            ]]
-        ])
+        def maxRetries = 3
+        def retryCount = 0
+        def success = false
+        
+        while (!success && retryCount < maxRetries) {
+            try {
+                retryCount++
+                echo "🔄 Attempt ${retryCount} of ${maxRetries}"
+                
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "*/${config.branch}"]],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [
+                        [$class: 'CloneOption', depth: 1, noTags: false, reference: '', shallow: true],
+                        [$class: 'CleanBeforeCheckout']  // Limpiar antes del checkout
+                    ],
+                    userRemoteConfigs: [[
+                        url: config.repoUrl,
+                        credentialsId: 'GITHUB'
+                    ]]
+                ])
 
-        // Configurar safe.directory correctamente para Windows
-        bat "git config --global --add safe.directory \"${config.repoPath.replace('/', '\\')}\""
+                // Configurar safe.directory
+                bat "git config --global --add safe.directory \"${config.repoPath.replace('/', '\\')}\""
 
-        // Obtener último commit en Windows CMD de forma segura
-        def lastCommit = bat(
-            script: '@for /f "delims=" %%a in (\'git log -1 --pretty^=format:"%%H|%%an|%%s"\') do @echo %%a',
-            returnStdout: true
-        ).trim()
+                // Obtener último commit
+                def lastCommit = bat(
+                    script: '@for /f "delims=" %%a in (\'git log -1 --pretty^=format:"%%H|%%an|%%s"\') do @echo %%a',
+                    returnStdout: true
+                ).trim()
 
-        // Limpiar retornos de carro y saltos de línea
-        lastCommit = lastCommit.replaceAll("[\\r\\n]+", "")
-        def parts = lastCommit.split("\\|")
-        def hash = parts[0]
-        def author = parts.length > 1 ? parts[1] : ""
-        def message = parts.length > 2 ? parts[2] : ""
+                lastCommit = lastCommit.replaceAll("[\\r\\n]+", "")
+                def parts = lastCommit.split("\\|")
+                env.COMMIT_HASH = parts[0]
+                env.COMMIT_AUTHOR = parts.length > 1 ? parts[1] : ""
+                env.COMMIT_MESSAGE = parts.length > 2 ? parts[2] : ""
 
-        env.COMMIT_HASH = hash
-        env.COMMIT_AUTHOR = author
-        env.COMMIT_MESSAGE = message
+                echo "🔍 Último commit: ${env.COMMIT_HASH} por ${env.COMMIT_AUTHOR} - ${env.COMMIT_MESSAGE}"
+                success = true
 
-        echo "🔍 Último commit: ${env.COMMIT_HASH} por ${env.COMMIT_AUTHOR} - ${env.COMMIT_MESSAGE}"
+            } catch (Exception e) {
+                echo "❌ Error en intento ${retryCount}: ${e.message}"
+                
+                if (retryCount < maxRetries) {
+                    echo "🔄 Reintentando después de limpiar archivos de bloqueo..."
+                    cleanLockFiles(config.repoPath)
+                    sleep(time: 5, unit: 'SECONDS') // Esperar antes de reintentar
+                } else {
+                    error("💥 Fallo después de ${maxRetries} intentos: ${e.message}")
+                }
+            }
+        }
     }
 
     echo "✅ Repository successfully shallow-cloned at: ${config.repoPath}"
