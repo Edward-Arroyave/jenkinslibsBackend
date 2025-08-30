@@ -219,7 +219,7 @@ def call(Map config) {
                         ENVIRONMENT: config.AMBIENTE
                     ])
                 }
-                cleanup()
+                cleanWs()
             }
             
             success { echo '🎉 DESPLIEGUE FINALIZADO CON ÉXITO' }
