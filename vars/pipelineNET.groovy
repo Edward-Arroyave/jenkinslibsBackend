@@ -25,11 +25,7 @@ def call(Map config) {
         
         stages {
 
-            stage('cleanup') {
-                steps {
-                    cleanWs()
-                }
-            }
+           
             stage('Load Config & Clone Repo') {
                 steps {
                     script {
