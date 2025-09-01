@@ -63,6 +63,7 @@ def call(Map config) {
                         def parallelStages = [:]
                         
                         apis.each { api ->
+                          parallelStages["Deploy-${api}"] = {
                             try {
                                 dir("${configCompleto.APIS[api].REPO_PATH}") {
                                     def csproj = readFile(file: "${api}.csproj")
@@ -84,6 +85,7 @@ def call(Map config) {
                                 apisFallidas << api
                                 currentBuild.result = 'UNSTABLE'
                             }
+                          }
                         }
 
 
