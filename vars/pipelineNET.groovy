@@ -9,7 +9,8 @@ def call(Map config) {
     echo "🌍 Ambiente: ${config.AMBIENTE}"
     echo "📦 Producto: ${config.PRODUCT}"
     
-   
+    def apisExitosas = []
+    def apisFallidas = []
 
     pipeline {
         agent { label 'Windows-node' }
@@ -20,8 +21,6 @@ def call(Map config) {
             REPO_URL = "${config.REPO_URL}"
             CONFIGURATION = 'Release'
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
-            env.apisExitosas = []
-            env.apisFallidas = []
         }
         
         stages {
@@ -82,17 +81,17 @@ def call(Map config) {
 
                 script {
                     echo "📊 =============================== RESUMEN DESPLIEGUE ==============================="
-                    echo "✅ APIs exitosas: ${env.apisExitosas.size()}/${apis.size()}"
-                    echo "❌ APIs fallidas: ${env.apisFallidas.size()}/${apis.size()}"
+                    echo "✅ APIs exitosas: ${apisExitosas.size()}/${apis.size()}"
+                    echo "❌ APIs fallidas: ${apisFallidas.size()}/${apis.size()}"
                     
-                    if (env.apisExitosas) {
-                        echo "🎯 Exitosas: ${env.apisExitosas.join(', ')}"
+                    if (apisExitosas) {
+                        echo "🎯 Exitosas: ${apisExitosas.join(', ')}"
                     } else {
                         echo "⚠️  No hubo APIs exitosas"
                     }
                     
-                    if (env.apisFallidas) {
-                        echo "💥 Fallidas: ${env.apisFallidas.join(', ')}"
+                    if (apisFallidas) {
+                        echo "💥 Fallidas: ${apisFallidas.join(', ')}"
                     } else {
                         echo "✅ Todas las APIs fueron exitosas"
                     }
@@ -100,8 +99,8 @@ def call(Map config) {
                     echo "⏰ Duración total: ${currentBuild.durationString}"
 
                     sendNotificationTeamsNET([
-                        APIS_SUCCESSFUL:  env.apisExitosas.join(', '),
-                        APIS_FAILURE: env.env.apisFallidas.join(', '),
+                        APIS_SUCCESSFUL:  apisExitosas.join(', '),
+                        APIS_FAILURE: apisFallidas.join(', '),
                         ENVIRONMENT: config.AMBIENTE
                     ])
                 }
