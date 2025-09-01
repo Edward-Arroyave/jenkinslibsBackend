@@ -16,8 +16,7 @@ def call(Map config) {
         agent { label 'Windows-node' }
         
         environment {
-            BUILD_FOLDER = "${env.WORKSPACE}/${env.BUILD_ID}"
-            REPO_PATH = "${BUILD_FOLDER}/repo"
+            BUILD_FOLDER = "${env.BUILD_ID}/${env.WORKSPACE}"
             REPO_URL = "${config.REPO_URL}"
             CONFIGURATION = 'Release'
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
@@ -38,9 +37,9 @@ def call(Map config) {
                             
                             echo "✅ Configuración cargada exitosamente"
                             echo "🌿 Rama configurada: ${branch}"
-                            echo "📁 Ruta del repositorio: ${env.REPO_PATH}"
+                            echo "📁 Ruta del repositorio: ${env.BUILD_FOLDER}"
                             
-                            cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
+                            cloneRepoNET(branch: branch, repoPath: env.BUILD_FOLDER, repoUrl: env.REPO_URL)
                             
                             env.CONFIG_COMPLETO = groovy.json.JsonOutput.toJson(configCompleto)
                             
@@ -65,7 +64,7 @@ def call(Map config) {
                         apis.each { api ->
                           parallelStages["Deploy-${api}"] = {
                             try {
-                                dir("${configCompleto.APIS[api].REPO_PATH}") {
+                                dir("${configCompleto.APIS[api].BUILD_FOLDER}") {
                                     def csproj = readFile(file: "${api}.csproj")
 
                                     if (csproj.contains("<TargetFrameworkVersion>v4")) {
