@@ -64,10 +64,125 @@ def call(Map config) {
                         
                         apis.each { api ->
                             parallelStages["Deploy-${api}"] = {
-                                pipelineNET(api, configCompleto, config, CONFIGURATION)
+                                try {
+                                    echo "🔹 ========== INICIANDO DESPLIEGUE: ${api} =========="
+                                    
+                                    dir("${configCompleto.APIS[api].REPO_PATH}") {
+                                        def csproj = readFile(file: "${api}.csproj")
+                                        if (csproj.contains("<TargetFrameworkVersion>v4")) {
+
+
+                                            echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
+
+                                            def msbuildPath = "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\msbuild.exe"
+
+
+                                            stage("Restore ${api} (.NET 4.x)") {
+                                                bat """
+                                                    echo 📦 Restaurando paquetes NuGet para ${api}...
+                                                    nuget restore ${api}.csproj -PackagesDirectory ..\\packages
+                                                """
+                                            }
+                                            stage("Deploy ${api} (.NET 4.x)") {
+                                                def apiConfig = [
+                                                    CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
+                                                    CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
+                                                    URL: configCompleto.APIS[api].URL[config.AMBIENTE]
+                                                ]
+
+                                                dir("${apiConfig.CS_PROJ_PATH}") {
+                                                    withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                                                        powershell """
+                                                            Write-Host "📋 Leyendo perfil de publicación..."
+                                                            [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                                                            \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+                                                            
+                                                            if (-not \$profile) {
+                                                                Write-Error "❌ No se encontró un perfil válido de MSDeploy"
+                                                                exit 1
+                                                            }
+                                                            
+                                                            Write-Host "✅ Perfil encontrado: \$(\$profile.profileName)"
+                                                            Write-Host "🔗 URL: \$(\$profile.publishUrl)"
+                                                            Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
+                                                            
+                                                            \$url = \$profile.publishUrl
+                                                            \$site = \$profile.msdeploySite
+                                                            \$user = \$profile.userName
+                                                            \$pass = \$profile.userPWD
+                                                            
+                                                            \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                                                            
+                                                            Write-Host "🚀 Publicando: \$projectFile"
+                                                            
+                                                            # USAR MSBUILD EN LUGAR DE DOTNET MSBUILD PARA .NET FRAMEWORK 4.x
+                                                            & "${msbuildPath}" "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:minimal /p:VisualStudioVersion=16.0
+                                                        """
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            echo "⚙️ Proyecto ${api} detectado como .NET Core / .NET 5+"
+
+                                            stage("Restore ${api}") {
+                                                powershell """
+                                                    Write-Host "📄 Restaurando dependencias de ${api}..."
+                                                    dotnet restore ${api}.csproj --verbosity normal
+                                                """
+                                            }
+
+                                            stage("Deploy ${api}") {
+                                                def apiConfig = [
+                                                    CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
+                                                    CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
+                                                    URL: configCompleto.APIS[api].URL[config.AMBIENTE]
+                                                ]
+
+                                                dir("${apiConfig.CS_PROJ_PATH}") {
+                                                    withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                                                        powershell """
+                                                            Write-Host "📋 Leyendo perfil de publicación..."
+                                                            [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                                                            \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+                                                            
+                                                            if (-not \$profile) {
+                                                                Write-Error "❌ No se encontró un perfil válido de MSDeploy"
+                                                                exit 1
+                                                            }
+                                                            
+                                                            Write-Host "✅ Perfil encontrado: \$(\$profile.profileName)"
+                                                            Write-Host "🔗 URL: \$(\$profile.publishUrl)"
+                                                            Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
+                                                            
+                                                            \$url = \$profile.publishUrl
+                                                            \$site = \$profile.msdeploySite
+                                                            \$user = \$profile.userName
+                                                            \$pass = \$profile.userPWD
+                                                            
+                                                            \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                                                            
+                                                            Write-Host "🚀 Publicando: \$projectFile"
+                                                            
+                                                            dotnet msbuild  "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:minimal 
+                                                        """
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    apisExitosas << api
+                                    echo "🎉 DESPLIEGUE EXITOSO: ${api}"
+                                    
+                                } catch (err) {
+                                    echo "❌ ERROR EN DESPLIEGUE ${api}: ${err.message}"
+                                    apisFallidas << api
+                                    currentBuild.result = 'UNSTABLE'
+                                }
+                                
+                                echo "🔸 ========== FIN DESPLIEGUE: ${api} =========="
                             }
                         }
-
 
                         echo "⏰ Ejecutando despliegues en paralelo..."
                         parallel parallelStages
