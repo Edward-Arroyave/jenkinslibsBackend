@@ -1,4 +1,4 @@
-def call(api, configCompleto, config, CONFIGURATION) {
+def deployDotNet(api, configCompleto, config, CONFIGURATION) {
     stage("Restore ${api}") {
         powershell """
             Write-Host "📄 Restaurando dependencias de ${api}..."
