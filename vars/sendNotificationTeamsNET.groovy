@@ -77,8 +77,8 @@ def call(Map config) {
                     [name: "Commit Message", template: "${env.COMMIT_MESSAGE}"],
                     [name: "Commit Hash", template: "${env.COMMIT_HASH}"],
                     [name: "Duration", template: durationText],
-                    [name: "APIS_SUCCESSFUL", template: "✅${config.APIS_SUCCESSFUL}"],
-                    [name: "APIS_FAILURE", template: "❌ ${config.APIS_FAILURE}"],
+                    [name: "APIS_SUCCESSFUL", template: "${config.APIS_SUCCESSFUL}"],
+                    [name: "APIS_FAILURE", template: "${config.APIS_FAILURE}"],
                 ]
             )
             echo "📢 ✅ Notificación enviada exitosamente a Teams"
