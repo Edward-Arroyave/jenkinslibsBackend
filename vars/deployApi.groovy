@@ -12,12 +12,12 @@ def call(api, configCompleto, config, CONFIGURATION) {
             }
         }
 
-        env.apisExitosas << api
+        apisExitosas << api
         echo "🎉 DESPLIEGUE EXITOSO: ${api}"
 
     } catch (err) {
         echo "❌ ERROR EN DESPLIEGUE ${api}: ${err.message}"
-        env.apisFallidas << api
+        apisFallidas << api
         currentBuild.result = 'UNSTABLE'
     }
 }
