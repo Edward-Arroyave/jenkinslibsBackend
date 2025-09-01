@@ -1,4 +1,4 @@
-def deployDotNetFramework4(api, configCompleto, config, CONFIGURATION) {
+def call(api, configCompleto, config, CONFIGURATION) {
     def msbuildPath = "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\msbuild.exe"
 
     stage("Restore ${api} (.NET 4.x)") {
