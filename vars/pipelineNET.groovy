@@ -16,8 +16,8 @@ def call(Map config) {
         agent { label 'Windows-node' }
         
         environment {
-            BUILD_FOLDER = "${env.WORKSPACE}/${env.BUILD_ID}"
-            REPO_PATH = "${BUILD_FOLDER}/repo"
+            BUILD_FOLDER = "${env.WORKSPACE}"
+            REPO_PATH = "${BUILD_FOLDER}"
             REPO_URL = "${config.REPO_URL}"
             CONFIGURATION = 'Release'
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
