@@ -12,14 +12,14 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
-    stage("Build SDK-style projects (.NET Standard)") {
-        dir("${env.REPO_PATH}\\ViewModels") {
-            bat """
-                echo 🔧 Compilando ViewModels.csproj (.NET Standard)...
-                dotnet build "ViewModels.csproj" -c ${CONFIGURATION} --no-restore
-            """
-        }
-    }
+    // stage("Build SDK-style projects (.NET Standard)") {
+    //     dir("${env.REPO_PATH}\\ViewModels") {
+    //         bat """
+    //             echo 🔧 Compilando ViewModels.csproj (.NET Standard)...
+    //             dotnet build "ViewModels.csproj" -c ${CONFIGURATION} --no-restore
+    //         """
+    //     }
+    // }
 
     stage("Deploy ${api} (.NET Framework 4.x)") {
         def apiConfig = [
