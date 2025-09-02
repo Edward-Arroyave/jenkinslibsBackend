@@ -16,7 +16,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
         dir("${env.REPO_PATH}\\ViewModels") {
             bat """
                 echo 🔧 Compilando ViewModels.csproj (.NET Standard)...
-                dotnet build "ViewModels.csproj" -c ${CONFIGURATION} --no-restore
+                 dotnet restore ViewModels.csproj --verbosity normal
             """
         }
     }
