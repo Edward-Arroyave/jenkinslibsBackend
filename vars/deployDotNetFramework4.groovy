@@ -57,15 +57,15 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
                     # Compilar y publicar la solución legacy
                     &   "${msbuildPath}" "ApiCrmVitalea.sln" `
-                        /p:DeployOnBuild=true `
+                        /p:DeployOnBuild=false `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
-                        /p:AllowUntrustedCertificate=true `
-                        /p:BuildProjectReferences=true `
+                        /p:AllowUntrustedCertificate=false `
+                        /p:BuildProjectReferences=false `
                         /p:TargetFrameworkVersion=v4.7.2 `
                         /p:VisualStudioVersion=15.0 `
-                        /p:ImportDirectoryBuildProps=true `
-                        /p:ImportDirectoryBuildTargets=true `
+                        /p:ImportDirectoryBuildProps=flase `
+                        /p:ImportDirectoryBuildTargets=false `
                         /maxcpucount
                 """
             }
