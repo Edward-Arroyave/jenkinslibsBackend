@@ -3,8 +3,8 @@ def call(api, configCompleto, config, CONFIGURATION) {
     // Ruta MSBuild 2022 x64
     def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\amd64\\MSBuild.exe"
 
-    // Ruta a los targets de WebApplications
-    def vsToolsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Microsoft\\VisualStudio\\v17.0\\WebApplications"
+    // Ruta padre de WebApplications
+    def vsToolsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Microsoft\\VisualStudio\\v17.0"
 
     stage("Restore ${api}") {
         dir("${env.REPO_PATH}") {
