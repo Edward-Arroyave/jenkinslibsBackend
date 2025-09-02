@@ -9,6 +9,14 @@ def call(api, configCompleto, config, CONFIGURATION) {
     // Ruta a los SDKs de .NET instalados
     def dotnetSdksPath = "C:\\Program Files\\dotnet\\sdk\\6.0.428\\Sdks"
 
+    stage("Backup ApiCrmVitalea.csproj") {
+        dir("${env.REPO_PATH}\\ApiCrmVitalea") {
+            bat """
+                copy ApiCrmVitalea.csproj ApiCrmVitalea.csproj.backup
+            """
+        }
+    }
+
     stage("Patch Directory.Build.props") {
         dir("${env.REPO_PATH}") {
             writeFile file: "Directory.Build.props", text: """
@@ -52,12 +60,36 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
-    stage("Restore ${api}") {
+    stage("Modify ApiCrmVitalea.csproj") {
         dir("${env.REPO_PATH}\\ApiCrmVitalea") {
-            bat """
-                echo 📦 Restaurando paquetes NuGet para ApiCrmVitalea...
-                nuget restore "ApiCrmVitalea.csproj" -PackagesDirectory "${env.REPO_PATH}\\packages"
-            """
+            powershell '''
+                $csprojPath = "ApiCrmVitalea.csproj"
+                $xml = [xml](Get-Content $csprojPath)
+                $ns = New-Object System.Xml.XmlNamespaceManager($xml.NameTable)
+                $ns.AddNamespace("msbuild", "http://schemas.microsoft.com/developer/msbuild/2003")
+
+                # Encontrar la referencia al proyecto ViewModels
+                $projectReference = $xml.SelectSingleNode("//msbuild:ProjectReference[contains(@Include, 'ViewModels.csproj')]", $ns)
+                if ($projectReference) {
+                    # Remover la referencia al proyecto
+                    $projectReference.ParentNode.RemoveChild($projectReference)
+
+                    # Agregar referencia a la DLL
+                    $itemGroup = $xml.CreateElement("ItemGroup", $xml.DocumentElement.NamespaceURI)
+                    $reference = $xml.CreateElement("Reference", $xml.DocumentElement.NamespaceURI)
+                    $reference.SetAttribute("Include", "ViewModels")
+                    $hintPath = $xml.CreateElement("HintPath", $xml.DocumentElement.NamespaceURI)
+                    $hintPath.InnerText = "bin\\Release\\ViewModels.dll"
+                    $reference.AppendChild($hintPath)
+                    $itemGroup.AppendChild($reference)
+                    $xml.Project.AppendChild($itemGroup)
+
+                    $xml.Save($csprojPath)
+                    Write-Host "✅ Referencia al proyecto ViewModels reemplazada por referencia a DLL."
+                } else {
+                    Write-Host "⚠️ No se encontró la referencia al proyecto ViewModels. Puede que ya sea una referencia a DLL."
+                }
+            '''
         }
     }
 
@@ -88,7 +120,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     \$env:VSToolsPath = "${vsToolsPath}"
                     \$env:MSBuildEnableWorkloadResolver = "false"
 
-                    # Compilar y publicar el proyecto .NET Framework evitando la resolución de proyectos referenciados
+                    # Compilar y publicar el proyecto .NET Framework
                     &   "${msbuildPath}" "ApiCrmVitalea.csproj" `
                         /p:DeployOnBuild=true `
                         /p:PublishProfile="\$profile.profileName" `
@@ -105,11 +137,15 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
-    stage("Cleanup Directory.Build.props") {
+    stage("Cleanup") {
         dir("${env.REPO_PATH}") {
             bat """
-                echo 🧹 Limpiando archivo temporal Directory.Build.props...
+                echo 🧹 Limpiando archivos temporales...
                 if exist Directory.Build.props del /f /q Directory.Build.props
+                if exist ApiCrmVitalea\\ApiCrmVitalea.csproj.backup (
+                    copy /Y ApiCrmVitalea\\ApiCrmVitalea.csproj.backup ApiCrmVitalea\\ApiCrmVitalea.csproj
+                    del /f /q ApiCrmVitalea\\ApiCrmVitalea.csproj.backup
+                )
             """
         }
     }
