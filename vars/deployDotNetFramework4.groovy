@@ -50,14 +50,14 @@ def call(api, configCompleto, config, CONFIGURATION) {
     stage("Patch Directory.Build.props") {
         dir("${env.REPO_PATH}\\ApiCrmVitalea") {
             writeFile file: "Directory.Build.props", text: """
-<Project>
-  <PropertyGroup>
-    <!-- Evita que MSBuild intente resolver SDKs inexistentes -->
-    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
-    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
-  </PropertyGroup>
-</Project>
-"""
+            <Project>
+            <PropertyGroup>
+                <!-- Evita que MSBuild intente resolver SDKs inexistentes -->
+                <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+                <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+            </PropertyGroup>
+            </Project>
+            """
         }
     }
 
