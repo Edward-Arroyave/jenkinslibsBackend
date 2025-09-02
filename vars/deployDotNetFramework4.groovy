@@ -28,6 +28,16 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
+    stage("Copy ViewModels DLL") {
+        dir("${env.REPO_PATH}\\ViewModels\\bin\\Release") {
+            bat """
+                echo 📂 Copiando ViewModels.dll a ApiCrmVitalea\\bin\\Release...
+                if not exist "${env.REPO_PATH}\\ApiCrmVitalea\\bin\\Release" mkdir "${env.REPO_PATH}\\ApiCrmVitalea\\bin\\Release"
+                copy ViewModels.dll "${env.REPO_PATH}\\ApiCrmVitalea\\bin\\Release\\" /Y
+            """
+        }
+    }
+
     stage("Restore ${api}") {
         dir("${env.REPO_PATH}\\ApiCrmVitalea") {
             bat """
@@ -64,7 +74,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
                     # Compilar y publicar la solución legacy
                     &   "${msbuildPath}" "ApiCrmVitalea.csproj" `
-                        /p:DeployOnBuild=false `
+                        /p:DeployOnBuild=true `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
                         /p:AllowUntrustedCertificate=true `
