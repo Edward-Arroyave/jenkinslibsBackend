@@ -6,6 +6,9 @@ def call(api, configCompleto, config, CONFIGURATION) {
     // Ruta padre de WebApplications
     def vsToolsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Microsoft\\VisualStudio\\v17.0"
 
+    // Ruta a los SDKs de .NET instalados
+    def dotnetSdksPath = "C:\\Program Files\\dotnet\\sdk\\6.0.428\\Sdks"
+
     stage("Restore ${api}") {
         dir("${env.REPO_PATH}") {
             bat """
@@ -20,6 +23,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
             bat """
                 echo 🔧 Compilando ViewModels.csproj (.NET Standard)...
                 dotnet restore ViewModels.csproj --verbosity normal
+                dotnet build ViewModels.csproj -c Release
             """
         }
     }
@@ -54,8 +58,9 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🔗 URL: \$(\$profile.publishUrl)"
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
-                    # Configurar MSBuildExtensionsPath para evitar errores de importación
+                    # Configurar rutas para que MSBuild encuentre los SDKs
                     \$env:MSBuildExtensionsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild"
+                    \$env:MSBuildSDKsPath = "${dotnetSdksPath}"
 
                     # Compilar y publicar la solución legacy
                     &   "${msbuildPath}" "ApiCrmVitalea.csproj" `
