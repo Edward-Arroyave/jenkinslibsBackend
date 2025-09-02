@@ -38,11 +38,11 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
                     # Publicar toda la solución
                     & "${msbuildPath}" "${env.REPO_PATH}" `
-                        /p:DeployOnBuild=true `
+                        /p:DeployOnBuild=false `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
-                        /p:AllowUntrustedCertificate=true `
-                        /p:BuildProjectReferences=true `
+                        /p:AllowUntrustedCertificate=false `
+                        /p:BuildProjectReferences=false `
                         /p:TargetFrameworkVersion=v4.7.2 `
                         /p:VisualStudioVersion=17.0 `
                         /p:ImportDirectoryBuildProps=false `
