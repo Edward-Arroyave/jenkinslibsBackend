@@ -12,14 +12,23 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
-    // stage("Build SDK-style projects (.NET Standard)") {
-    //     dir("${env.REPO_PATH}\\ViewModels") {
-    //         bat """
-    //             echo 🔧 Compilando ViewModels.csproj (.NET Standard)...
-    //             dotnet build "ViewModels.csproj" -c ${CONFIGURATION} --no-restore
-    //         """
-    //     }
-    // }
+    stage("Build SDK-style projects (.NET Standard)") {
+        dir("${env.REPO_PATH}\\ViewModels") {
+            bat """
+                echo 🔧 Compilando ViewModels.csproj (.NET Standard)...
+                dotnet build "ViewModels.csproj" -c ${CONFIGURATION} --no-restore
+            """
+        }
+    }
+
+    stage("Build .NET Framework projects") {
+        dir("${env.REPO_PATH}") {
+            bat """
+                echo 🔧 Compilando proyecto principal (.NET Framework 4.7.2)...
+                "${msbuildPath}" "ApiCrmVitalea\\ApiCrmVitalea.csproj" /p:Configuration=${CONFIGURATION} /p:TargetFrameworkVersion=v4.7.2 /maxcpucount
+            """
+        }
+    }
 
     stage("Deploy ${api} (.NET Framework 4.x)") {
         def apiConfig = [
@@ -42,17 +51,14 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🔗 URL: \$(\$profile.publishUrl)"
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
-                    # Compilar y publicar la solución legacy
-                    & "${msbuildPath}" "ApiCrmVitalea.sln" `
+                    # Publicar solo el proyecto principal
+                    & "${msbuildPath}" "ApiCrmVitalea\\ApiCrmVitalea.csproj" `
                         /p:DeployOnBuild=true `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
                         /p:AllowUntrustedCertificate=true `
-                        /p:BuildProjectReferences=false `
                         /p:TargetFrameworkVersion=v4.7.2 `
                         /p:VisualStudioVersion=15.0 `
-                        /p:ImportDirectoryBuildProps=false `
-                        /p:ImportDirectoryBuildTargets=false `
                         /maxcpucount
                 """
             }
