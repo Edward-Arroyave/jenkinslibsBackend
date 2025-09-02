@@ -38,13 +38,26 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
-
     stage("Restore ${api}") {
         dir("${env.REPO_PATH}\\ApiCrmVitalea") {
             bat """
                 echo 📦 Restaurando paquetes NuGet...
                 nuget restore "ApiCrmVitalea.csproj" -PackagesDirectory "${env.REPO_PATH}\\packages"
             """
+        }
+    }
+
+    stage("Patch Directory.Build.props") {
+        dir("${env.REPO_PATH}\\ApiCrmVitalea") {
+            writeFile file: "Directory.Build.props", text: """
+<Project>
+  <PropertyGroup>
+    <!-- Evita que MSBuild intente resolver SDKs inexistentes -->
+    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+  </PropertyGroup>
+</Project>
+"""
         }
     }
 
@@ -83,8 +96,6 @@ def call(api, configCompleto, config, CONFIGURATION) {
                         /p:TargetFrameworkVersion=v4.7.2 `
                         /p:VisualStudioVersion=15.0 `
                         /p:VSToolsPath="${vsToolsPath}" `
-                        /p:ImportDirectoryBuildProps=true `
-                        /p:ImportDirectoryBuildTargets=true `
                         /maxcpucount
                 """
             }
