@@ -1,6 +1,6 @@
 def call(api, configCompleto, config, CONFIGURATION) {
 
-    def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe"
+    def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe"
 
     // Restaurar paquetes NuGet solo para proyectos .NET Framework
     stage("Restore ${api} (.NET 4.x)") {
