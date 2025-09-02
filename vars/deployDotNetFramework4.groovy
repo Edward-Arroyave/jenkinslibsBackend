@@ -1,26 +1,25 @@
 def call(api, configCompleto, config, CONFIGURATION) {
 
-    def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe"
+    // Ruta MSBuild 2017
+    def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\BuildTools\\MSBuild\\15.0\\Bin\\MSBuild.exe"
 
-    // Restaurar paquetes NuGet solo para proyectos .NET Framework
+    // Restaurar paquetes NuGet a nivel de solución
     stage("Restore ${api} (.NET 4.x)") {
         dir("${env.REPO_PATH}") {
             bat """
-                echo 📦 Restaurando paquetes NuGet para ${api}...
-                nuget restore ${env.REPO_PATH}\\ApiCrmVitalea.sln -PackagesDirectory "${env.REPO_PATH}\\packages"
+                echo 📦 Restaurando paquetes NuGet para la solución...
+                nuget restore "${env.REPO_PATH}\\ApiCrmVitalea.sln" -PackagesDirectory "${env.REPO_PATH}\\packages"
             """
         }
     }
 
-    // Despliegue del proyecto .NET Framework usando MSBuild y perfil de publicación
+    // Despliegue de la solución legacy usando MSBuild 2017
     stage("Deploy ${api} (.NET 4.x)") {
         def apiConfig = [
-            CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
-            CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
-            URL: configCompleto.APIS[api].URL[config.AMBIENTE]
+            CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
         ]
 
-         dir("${configCompleto.APIS[api].REPO_PATH}") {
+        dir("${env.REPO_PATH}") {
             withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                 powershell """
                     Write-Host "📋 Leyendo perfil de publicación..."
@@ -36,15 +35,15 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🔗 URL: \$(\$profile.publishUrl)"
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
-                    # Publicar toda la solución
-                    & "${msbuildPath}" "${env.REPO_PATH}" `
+                    # Compilar y publicar toda la solución con MSBuild 2017
+                    & "${msbuildPath}" "ApiCrmVitalea.sln" `
                         /p:DeployOnBuild=true `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
-                        /p:AllowUntrustedCertificate=false `
-                        /p:BuildProjectReferences=false `
+                        /p:AllowUntrustedCertificate=true `
+                        /p:BuildProjectReferences=true `
                         /p:TargetFrameworkVersion=v4.7.2 `
-                        /p:VisualStudioVersion=17.0 `
+                        /p:VisualStudioVersion=15.0 `
                         /p:ImportDirectoryBuildProps=false `
                         /p:ImportDirectoryBuildTargets=false `
                         /maxcpucount
