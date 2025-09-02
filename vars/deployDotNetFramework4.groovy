@@ -1,12 +1,22 @@
 def call(api, configCompleto, config, CONFIGURATION) {
-    // Cambiar la ruta a MSBuild moderno
+
     def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe"
 
-    stage("Restore ${api} (.NET 4.x)") {
+    stage("Restore ${api} (.NET 4.x & SDK)") {
         bat """
             echo 📦 Restaurando paquetes NuGet para ${api}...
             nuget restore ${api}.csproj -PackagesDirectory ..\\packages
         """
+    }
+
+    // Compilar proyectos SDK-style primero (ej: ViewModels)
+    stage("Build SDK-style projects") {
+        dir("${env.REPO_PATH}/ViewModels") {
+            bat """
+                echo 🚀 Compilando librerías SDK-style con dotnet...
+                dotnet build ViewModels\\ViewModels.csproj -c ${CONFIGURATION} -o ..\\bin
+            """
+        }
     }
 
     stage("Deploy ${api} (.NET 4.x)") {
@@ -37,21 +47,11 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     \$user = \$profile.userName
                     \$pass = \$profile.userPWD
 
-                    \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                    \$projectFile = (Get-ChildItem -Filter "*.csproj" | Where-Object { \$_ -notlike "*ViewModels*" }).FullName
 
                     Write-Host "🚀 Publicando: \$projectFile"
 
-                    & "${msbuildPath}" "\$projectFile" `
-                        /p:DeployOnBuild=true `
-                        /p:WebPublishMethod=MSDeploy `
-                        /p:MsDeployServiceUrl="\$url" `
-                        /p:DeployIisAppPath="\$site" `
-                        /p:UserName="\$user" `
-                        /p:Password="\$pass" `
-                        /p:Configuration=${CONFIGURATION} `
-                        /p:AllowUntrustedCertificate=true `
-                        /verbosity:minimal `
-                        /p:VisualStudioVersion=17.0
+                    & "${msbuildPath}" "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:minimal /p:VisualStudioVersion=17.0
                 """
             }
         }
