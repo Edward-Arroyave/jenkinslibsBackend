@@ -29,7 +29,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
     }
 
     stage("Copy ViewModels DLL") {
-        dir("${env.REPO_PATH}\\ViewModels\\bin\\Release") {
+        dir("${env.REPO_PATH}\\ViewModels\\bin\\Release\\netstandard2.0") {
             bat """
                 echo 📂 Copiando ViewModels.dll a ApiCrmVitalea\\bin\\Release...
                 if not exist "${env.REPO_PATH}\\ApiCrmVitalea\\bin\\Release" mkdir "${env.REPO_PATH}\\ApiCrmVitalea\\bin\\Release"
@@ -37,6 +37,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
             """
         }
     }
+
 
     stage("Restore ${api}") {
         dir("${env.REPO_PATH}\\ApiCrmVitalea") {
