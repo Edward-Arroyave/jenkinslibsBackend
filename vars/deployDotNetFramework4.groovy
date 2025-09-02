@@ -7,7 +7,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
         dir("${env.REPO_PATH}") {
             bat """
                 echo 📦 Restaurando paquetes NuGet para la solución...
-                nuget restore "${env.REPO_PATH}\\CTS_VITALEA_BACK.sln" -PackagesDirectory "${env.REPO_PATH}\\packages"
+                nuget restore "${env.REPO_PATH}\\ApiCrmVitalea.sln" -PackagesDirectory "${env.REPO_PATH}\\packages"
             """
         }
     }
@@ -35,7 +35,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
                     # Publicar toda la solución a nivel de .NET Framework
-                    & "${msbuildPath}" "CTS_VITALEA_BACK.sln" `
+                    & "${msbuildPath}" "ApiCrmVitalea.sln" `
                         /p:DeployOnBuild=true `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
