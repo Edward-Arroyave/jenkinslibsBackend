@@ -21,7 +21,14 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
-    
+    stage("Build .NET Framework projects") {
+        dir("${env.REPO_PATH}") {
+            bat """
+                echo 🔧 Compilando proyecto principal (.NET Framework 4.7.2)...
+                "${msbuildPath}" "ApiCrmVitalea\\ApiCrmVitalea.csproj" /p:Configuration=${CONFIGURATION} /p:TargetFrameworkVersion=v4.7.2 /maxcpucount
+            """
+        }
+    }
 
     stage("Deploy ${api} (.NET Framework 4.x)") {
         def apiConfig = [
@@ -45,16 +52,16 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
                     # Compilar y publicar la solución legacy
-                    &   dotnet msbuild "ApiCrmVitalea\\ApiCrmVitalea.csproj" `
-                        /p:DeployOnBuild=true `
+                    &   "${msbuildPath}" "ApiCrmVitalea.sln" `
+                        /p:DeployOnBuild=false `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
-                        /p:AllowUntrustedCertificate=true `
-                        /p:BuildProjectReferences=true `
+                        /p:AllowUntrustedCertificate=false `
+                        /p:BuildProjectReferences=false `
                         /p:TargetFrameworkVersion=v4.7.2 `
                         /p:VisualStudioVersion=15.0 `
-                        /p:ImportDirectoryBuildProps=true `
-                        /p:ImportDirectoryBuildTargets=true `
+                        /p:ImportDirectoryBuildProps=false `
+                        /p:ImportDirectoryBuildTargets=false `
                         /maxcpucount
                 """
             }
