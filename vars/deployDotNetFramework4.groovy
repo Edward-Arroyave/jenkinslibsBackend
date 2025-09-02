@@ -4,10 +4,10 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
     // Restaurar paquetes NuGet solo para proyectos .NET Framework
     stage("Restore ${api} (.NET 4.x)") {
-        dir("${env.REPO_PATH}/${api}") {
+        dir("${env.REPO_PATH}") {
             bat """
                 echo 📦 Restaurando paquetes NuGet para ${api}...
-                nuget restore ${api}.csproj -PackagesDirectory ..\\packages
+                nuget restore ${api}.sln -PackagesDirectory ..\\packages
             """
         }
     }
@@ -20,7 +20,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
             URL: configCompleto.APIS[api].URL[config.AMBIENTE]
         ]
 
-        dir("${apiConfig.CS_PROJ_PATH}") {
+         dir("${configCompleto.APIS[api].REPO_PATH}") {
             withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                 powershell """
                     Write-Host "📋 Leyendo perfil de publicación..."
@@ -36,21 +36,14 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🔗 URL: \$(\$profile.publishUrl)"
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
-                    \$url = \$profile.publishUrl
-                    \$site = \$profile.msdeploySite
-                    \$user = \$profile.userName
-                    \$pass = \$profile.userPWD
-
-                    \$projectFile = (Get-ChildItem -Filter "*.csproj" | Where-Object { \$_ -notlike "*ViewModels*" }).FullName
-
-                    Write-Host "🚀 Publicando: \$projectFile"
-
-                    & "${msbuildPath}" "\$projectFile" `
+                    # Publicar toda la solución
+                    & "${msbuildPath}" "${apiConfig.CS_SOLUTION_PATH}" `
                         /p:DeployOnBuild=true `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
                         /p:AllowUntrustedCertificate=true `
-                        /p:BuildProjectReferences=false
+                        /p:BuildProjectReferences=true `
+                        /maxcpucount
                 """
             }
         }
