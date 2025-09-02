@@ -93,54 +93,61 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
-    stage("Deploy ${api} (.NET Framework 4.x)") {
-        def apiConfig = [
-            CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
-        ]
+   stage("Deploy ${api} (.NET Framework 4.x)") {
+    def apiConfig = [
+        CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
+    ]
 
-        dir("${env.REPO_PATH}\\ApiCrmVitalea") {
-            withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-                powershell """
-                    Write-Host "📋 Leyendo perfil de publicación..."
-                    [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                    \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+    dir("${env.REPO_PATH}\\ApiCrmVitalea") {
+        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+            powershell """
+                Write-Host "📋 Leyendo perfil de publicación..."
+                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                    if (-not \$profile) {
-                        Write-Error "❌ No se encontró un perfil válido de MSDeploy"
-                        exit 1
-                    }
+                if (-not \$profile) {
+                    Write-Error "❌ No se encontró un perfil válido de MSDeploy"
+                    exit 1
+                }
 
-                    Write-Host "✅ Perfil encontrado: \$(\$profile.profileName)"
-                    Write-Host "🔗 URL: \$(\$profile.publishUrl)"
-                    Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
+                Write-Host "✅ Perfil encontrado: \$(\$profile.profileName)"
+                Write-Host "🔗 URL: \$(\$profile.publishUrl)"
+                Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
+                Write-Host "👤 Usuario: \$(\$profile.userName)"
 
-                    # Extraer el nombre del perfil correctamente
-                    \$profileName = \$profile.profileName
+                # Extraer los parámetros necesarios del perfil
+                \$msdeployServiceUrl = "https://\$(\$profile.publishUrl)/msdeploy.axd"
+                \$deployIisAppPath = \$profile.msdeploySite
+                \$username = \$profile.userName
+                \$password = \$profile.userPWD
 
-                    # Configurar rutas críticas y deshabilitar el resolvedor de workloads
-                    \$env:MSBuildExtensionsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild"
-                    \$env:MSBuildSDKsPath = "${dotnetSdksPath}"
-                    \$env:VSToolsPath = "${vsToolsPath}"
-                    \$env:MSBuildEnableWorkloadResolver = "false"
+                # Configurar rutas críticas y deshabilitar el resolvedor de workloads
+                \$env:MSBuildExtensionsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild"
+                \$env:MSBuildSDKsPath = "${dotnetSdksPath}"
+                \$env:VSToolsPath = "${vsToolsPath}"
+                \$env:MSBuildEnableWorkloadResolver = "false"
 
-                    # Compilar y publicar el proyecto .NET Framework
-                    & "${msbuildPath}" "ApiCrmVitalea.csproj" `
-                        /p:DeployOnBuild=true `
-                        /p:PublishProfile="\$profileName" `
-                        /p:Configuration=${CONFIGURATION} `
-                        /p:AllowUntrustedCertificate=true `
-                        /p:BuildProjectReferences=false `
-                        /p:SkipResolveProjectReferences=true `
-                        /p:TargetFrameworkVersion=v4.7.2 `
-                        /p:VisualStudioVersion=17.0 `
-                        /p:VSToolsPath="${vsToolsPath}" `
-                        /p:WebPublishMethod=MSDeploy `
-                        /p:DesktopBuildPackageLocation="obj\\${CONFIGURATION}\\Package\\ApiCrmVitalea.zip" `
-                        /maxcpucount
-                """
-            }
+                # Compilar y publicar el proyecto .NET Framework usando parámetros directos de MSDeploy
+                & "${msbuildPath}" "ApiCrmVitalea.csproj" `
+                    /p:DeployOnBuild=true `
+                    /p:Configuration=${CONFIGURATION} `
+                    /p:AllowUntrustedCertificate=true `
+                    /p:BuildProjectReferences=false `
+                    /p:SkipResolveProjectReferences=true `
+                    /p:TargetFrameworkVersion=v4.7.2 `
+                    /p:VisualStudioVersion=17.0 `
+                    /p:VSToolsPath="${vsToolsPath}" `
+                    /p:WebPublishMethod=MSDeploy `
+                    /p:MsDeployServiceUrl="\$msdeployServiceUrl" `
+                    /p:DeployIisAppPath="\$deployIisAppPath" `
+                    /p:Username="\$username" `
+                    /p:Password="\$password" `
+                    /p:DesktopBuildPackageLocation="obj\\${CONFIGURATION}\\Package\\ApiCrmVitalea.zip" `
+                    /maxcpucount
+            """
         }
     }
+}
 
     stage("Cleanup") {
         dir("${env.REPO_PATH}") {
