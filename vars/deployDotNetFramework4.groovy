@@ -1,6 +1,6 @@
 def call(api, configCompleto, config, CONFIGURATION) {
     def msbuildPath = "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\msbuild.exe"
-    
+
     stage("Restore ${api} (.NET 4.x)") {
         bat """
             echo 📦 Restaurando paquetes NuGet para ${api}...
@@ -40,7 +40,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
                     Write-Host "🚀 Publicando: \$projectFile"
 
-                    & "${msbuildPath}" "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:minimal /p:VisualStudioVersion=16.0
+                    & "${msbuildPath}" "$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="$url" /p:DeployIisAppPath="$site" /p:UserName="$user" /p:Password="$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:minimal /p:VisualStudioVersion=17.0
                 """
             }
         }
