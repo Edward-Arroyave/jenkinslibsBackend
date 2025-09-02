@@ -1,23 +1,11 @@
 def call(api, configCompleto, config, CONFIGURATION) {
+    def msbuildPath = "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\msbuild.exe"
 
-    // Path a MSBuild de Visual Studio (para proyectos .NET Framework clásicos)
-    def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe"
-
-    stage("Restore ${api} (.NET 4.x & SDK)") {
-        // Restaurar paquetes NuGet
+    stage("Restore ${api} (.NET 4.x)") {
         bat """
             echo 📦 Restaurando paquetes NuGet para ${api}...
             nuget restore ${api}.csproj -PackagesDirectory ..\\packages
         """
-    }
-
-    stage("Build SDK-style projects (ViewModels)") {
-        dir("${env.REPO_PATH}/ViewModels") {
-            bat """
-                echo 🚀 Compilando librerías SDK-style con dotnet...
-                dotnet build ViewModels.csproj -c ${CONFIGURATION} -o ..\\bin
-            """
-        }
     }
 
     stage("Deploy ${api} (.NET 4.x)") {
@@ -48,16 +36,11 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     \$user = \$profile.userName
                     \$pass = \$profile.userPWD
 
-                    # Detectar si es SDK-style (netstandard) o .NET Framework clásico
-                    \$projectFile = (Get-ChildItem -Filter "*.csproj" | Where-Object { \$_ -notlike "*ViewModels*" }).FullName
-                    \$projContent = Get-Content \$projectFile
-                    if (\$projContent -match '<Project Sdk="Microsoft.NET.Sdk">') {
-                        Write-Host "🚀 Proyecto SDK-style detectado, usando dotnet msbuild"
-                        dotnet msbuild "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:minimal
-                    } else {
-                        Write-Host "🚀 Proyecto .NET Framework detectado, usando MSBuild clásico"
-                        & "${msbuildPath}" "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:minimal /p:VisualStudioVersion=17.0
-                    }
+                    \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+
+                    Write-Host "🚀 Publicando: \$projectFile"
+
+                    & "${msbuildPath}" "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:minimal /p:VisualStudioVersion=16.0
                 """
             }
         }
