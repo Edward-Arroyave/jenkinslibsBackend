@@ -45,12 +45,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
                     Write-Host "🚀 Publicando: \$projectFile"
 
-                    & "${msbuildPath}" "\$projectFile" `
-                        /p:DeployOnBuild=true `
-                        /p:PublishProfile="\$profile.profileName" `
-                        /p:Configuration=${CONFIGURATION} `
-                        /p:AllowUntrustedCertificate=true `
-                        /p:BuildProjectReferences=false
+                    dotnet msbuild "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:minimal
                 """
             }
         }
