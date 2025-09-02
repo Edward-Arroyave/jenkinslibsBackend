@@ -3,18 +3,25 @@ def call(api, configCompleto, config, CONFIGURATION) {
     // Ruta MSBuild 2017
     def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\BuildTools\\MSBuild\\15.0\\Bin\\MSBuild.exe"
 
-    // Restaurar paquetes NuGet a nivel de solución
-    stage("Restore ${api} (.NET 4.x)") {
+    stage("Restore ${api}") {
         dir("${env.REPO_PATH}") {
             bat """
-                echo 📦 Restaurando paquetes NuGet para la solución...
+                echo 📦 Restaurando paquetes NuGet...
                 nuget restore "${env.REPO_PATH}\\ApiCrmVitalea.sln" -PackagesDirectory "${env.REPO_PATH}\\packages"
             """
         }
     }
 
-    // Despliegue de la solución legacy usando MSBuild 2017
-    stage("Deploy ${api} (.NET 4.x)") {
+    stage("Build SDK-style projects (.NET Standard)") {
+        dir("${env.REPO_PATH}\\ViewModels") {
+            bat """
+                echo 🔧 Compilando ViewModels.csproj (.NET Standard)...
+                dotnet build "ViewModels.csproj" -c ${CONFIGURATION} --no-restore
+            """
+        }
+    }
+
+    stage("Deploy ${api} (.NET Framework 4.x)") {
         def apiConfig = [
             CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
         ]
@@ -35,7 +42,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🔗 URL: \$(\$profile.publishUrl)"
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
-                    # Compilar y publicar toda la solución con MSBuild 2017
+                    # Compilar y publicar la solución legacy
                     & "${msbuildPath}" "ApiCrmVitalea.sln" `
                         /p:DeployOnBuild=true `
                         /p:PublishProfile="\$profile.profileName" `
