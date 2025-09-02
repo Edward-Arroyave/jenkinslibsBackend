@@ -82,18 +82,20 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🔗 URL: \$(\$profile.publishUrl)"
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
-                    # Configurar rutas críticas para que MSBuild encuentre los targets y SDKs
+                    # Configurar rutas críticas y deshabilitar el resolvedor de workloads
                     \$env:MSBuildExtensionsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild"
                     \$env:MSBuildSDKsPath = "${dotnetSdksPath}"
                     \$env:VSToolsPath = "${vsToolsPath}"
+                    \$env:MSBuildEnableWorkloadResolver = "false"
 
-                    # Compilar y publicar la solución legacy
+                    # Compilar y publicar el proyecto .NET Framework evitando la resolución de proyectos referenciados
                     &   "${msbuildPath}" "ApiCrmVitalea.csproj" `
                         /p:DeployOnBuild=true `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
                         /p:AllowUntrustedCertificate=true `
                         /p:BuildProjectReferences=false `
+                        /p:SkipResolveProjectReferences=true `
                         /p:TargetFrameworkVersion=v4.7.2 `
                         /p:VisualStudioVersion=17.0 `
                         /p:VSToolsPath="${vsToolsPath}" `
