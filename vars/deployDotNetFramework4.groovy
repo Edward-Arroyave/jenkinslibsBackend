@@ -55,7 +55,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
     stage("Restore ${api}") {
         dir("${env.REPO_PATH}\\ApiCrmVitalea") {
             bat """
-                echo 📦 Restaurando paquetes NuGet...
+                echo 📦 Restaurando paquetes NuGet para ApiCrmVitalea...
                 nuget restore "ApiCrmVitalea.csproj" -PackagesDirectory "${env.REPO_PATH}\\packages"
             """
         }
@@ -82,9 +82,10 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🔗 URL: \$(\$profile.publishUrl)"
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
-                    # Configurar rutas para que MSBuild encuentre los SDKs
+                    # Configurar rutas críticas para que MSBuild encuentre los targets y SDKs
                     \$env:MSBuildExtensionsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild"
                     \$env:MSBuildSDKsPath = "${dotnetSdksPath}"
+                    \$env:VSToolsPath = "${vsToolsPath}"
 
                     # Compilar y publicar la solución legacy
                     &   "${msbuildPath}" "ApiCrmVitalea.csproj" `
@@ -94,7 +95,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                         /p:AllowUntrustedCertificate=true `
                         /p:BuildProjectReferences=false `
                         /p:TargetFrameworkVersion=v4.7.2 `
-                        /p:VisualStudioVersion=15.0 `
+                        /p:VisualStudioVersion=17.0 `
                         /p:VSToolsPath="${vsToolsPath}" `
                         /maxcpucount
                 """
