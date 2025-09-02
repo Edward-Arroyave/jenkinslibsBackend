@@ -114,6 +114,9 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🔗 URL: \$(\$profile.publishUrl)"
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
+                    # Extraer el nombre del perfil correctamente
+                    \$profileName = \$profile.profileName
+
                     # Configurar rutas críticas y deshabilitar el resolvedor de workloads
                     \$env:MSBuildExtensionsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild"
                     \$env:MSBuildSDKsPath = "${dotnetSdksPath}"
@@ -121,9 +124,9 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     \$env:MSBuildEnableWorkloadResolver = "false"
 
                     # Compilar y publicar el proyecto .NET Framework
-                    &   "${msbuildPath}" "ApiCrmVitalea.csproj" `
+                    & "${msbuildPath}" "ApiCrmVitalea.csproj" `
                         /p:DeployOnBuild=true `
-                        /p:PublishProfile="\$profile.profileName" `
+                        /p:PublishProfile="\$profileName" `
                         /p:Configuration=${CONFIGURATION} `
                         /p:AllowUntrustedCertificate=true `
                         /p:BuildProjectReferences=false `
@@ -131,6 +134,8 @@ def call(api, configCompleto, config, CONFIGURATION) {
                         /p:TargetFrameworkVersion=v4.7.2 `
                         /p:VisualStudioVersion=17.0 `
                         /p:VSToolsPath="${vsToolsPath}" `
+                        /p:WebPublishMethod=MSDeploy `
+                        /p:DesktopBuildPackageLocation="obj\\${CONFIGURATION}\\Package\\ApiCrmVitalea.zip" `
                         /maxcpucount
                 """
             }
