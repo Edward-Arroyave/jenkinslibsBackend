@@ -38,7 +38,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
             CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
         ]
 
-        dir("${env.REPO_PATH}\\ApiCrmVitalea") {
+        dir("${env.REPO_PATH}") {
             withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                 powershell """
                     Write-Host "📋 Leyendo perfil de publicación..."
