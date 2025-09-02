@@ -33,14 +33,6 @@ def call(api, configCompleto, config, CONFIGURATION) {
     }
 
 
-    stage("Build .NET Framework projects") {
-        dir("${env.REPO_PATH}\\ApiCrmVitalea") {
-            bat """
-                echo 🔧 Compilando proyecto principal (.NET Framework 4.7.2)...
-                "${msbuildPath}" "ApiCrmVitalea.csproj" /p:Configuration=${CONFIGURATION} /p:TargetFrameworkVersion=v4.7.2 /maxcpucount
-            """
-        }
-    }
 
     stage("Deploy ${api} (.NET Framework 4.x)") {
         def apiConfig = [
