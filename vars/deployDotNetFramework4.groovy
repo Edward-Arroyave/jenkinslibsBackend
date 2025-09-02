@@ -2,15 +2,15 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
     def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe"
 
-    // Restaurar paquetes NuGet solo para proyectos .NET Framework
-    stage("Restore ${api} (.NET 4.x)") {
+    // 1️⃣ Restaurar paquetes NuGet
+    stage("Restore ${api} (.NET 4.x & SDK)") {
         bat """
             echo 📦 Restaurando paquetes NuGet para ${api}...
             nuget restore ${api}.csproj -PackagesDirectory ..\\packages
         """
     }
 
-    // Compilar proyectos SDK-style primero (ej: ViewModels)
+    // 2️⃣ Compilar librerías SDK-style primero (ViewModels)
     stage("Build SDK-style projects") {
         dir("${env.REPO_PATH}/ViewModels") {
             bat """
@@ -20,7 +20,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
-    // Despliegue del proyecto .NET Framework sin recompilar referencias
+    // 3️⃣ Desplegar proyecto .NET Framework
     stage("Deploy ${api} (.NET 4.x)") {
         def apiConfig = [
             CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
@@ -50,9 +50,9 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     \$pass = \$profile.userPWD
 
                     \$projectFile = (Get-ChildItem -Filter "*.csproj" | Where-Object { \$_ -notlike "*ViewModels*" }).FullName
-
                     Write-Host "🚀 Publicando: \$projectFile"
 
+                    # Compilar sin reconstruir ProjectReference, apuntando a la DLL de ViewModels
                     & "${msbuildPath}" "\$projectFile" `
                         /p:DeployOnBuild=true `
                         /p:WebPublishMethod=MSDeploy `
@@ -63,7 +63,8 @@ def call(api, configCompleto, config, CONFIGURATION) {
                         /p:Configuration=${CONFIGURATION} `
                         /p:AllowUntrustedCertificate=true `
                         /p:VisualStudioVersion=17.0 `
-                        /p:BuildProjectReferences=false
+                        /p:BuildProjectReferences=false `
+                        /p:ReferencePath="${env.REPO_PATH}\\ViewModels\\bin"
                 """
             }
         }
