@@ -9,6 +9,20 @@ def call(api, configCompleto, config, CONFIGURATION) {
     // Ruta a los SDKs de .NET instalados
     def dotnetSdksPath = "C:\\Program Files\\dotnet\\sdk\\6.0.428\\Sdks"
 
+    stage("Patch Directory.Build.props") {
+        dir("${env.REPO_PATH}") {
+            writeFile file: "Directory.Build.props", text: """
+<Project>
+  <PropertyGroup>
+    <!-- Evita que MSBuild intente resolver SDKs inexistentes -->
+    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+  </PropertyGroup>
+</Project>
+"""
+        }
+    }
+
     stage("Restore ${api}") {
         dir("${env.REPO_PATH}") {
             bat """
@@ -43,20 +57,6 @@ def call(api, configCompleto, config, CONFIGURATION) {
             bat """
                 echo 📦 Restaurando paquetes NuGet...
                 nuget restore "ApiCrmVitalea.csproj" -PackagesDirectory "${env.REPO_PATH}\\packages"
-            """
-        }
-    }
-
-    stage("Patch Directory.Build.props") {
-        dir("${env.REPO_PATH}\\ApiCrmVitalea") {
-            writeFile file: "Directory.Build.props", text: """
-            <Project>
-            <PropertyGroup>
-                <!-- Evita que MSBuild intente resolver SDKs inexistentes -->
-                <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
-                <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
-            </PropertyGroup>
-            </Project>
             """
         }
     }
@@ -99,6 +99,15 @@ def call(api, configCompleto, config, CONFIGURATION) {
                         /maxcpucount
                 """
             }
+        }
+    }
+
+    stage("Cleanup Directory.Build.props") {
+        dir("${env.REPO_PATH}") {
+            bat """
+                echo 🧹 Limpiando archivo temporal Directory.Build.props...
+                if exist Directory.Build.props del /f /q Directory.Build.props
+            """
         }
     }
 }
