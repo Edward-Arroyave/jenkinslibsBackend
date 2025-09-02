@@ -1,17 +1,17 @@
 def call(api, configCompleto, config, CONFIGURATION) {
 
+    // Path a MSBuild de Visual Studio (para proyectos .NET Framework clásicos)
     def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe"
 
-    // 1️⃣ Restaurar paquetes NuGet
     stage("Restore ${api} (.NET 4.x & SDK)") {
+        // Restaurar paquetes NuGet
         bat """
             echo 📦 Restaurando paquetes NuGet para ${api}...
             nuget restore ${api}.csproj -PackagesDirectory ..\\packages
         """
     }
 
-    // 2️⃣ Compilar librerías SDK-style primero (ViewModels)
-    stage("Build SDK-style projects") {
+    stage("Build SDK-style projects (ViewModels)") {
         dir("${env.REPO_PATH}/ViewModels") {
             bat """
                 echo 🚀 Compilando librerías SDK-style con dotnet...
@@ -20,7 +20,6 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
-    // 3️⃣ Desplegar proyecto .NET Framework
     stage("Deploy ${api} (.NET 4.x)") {
         def apiConfig = [
             CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
@@ -49,22 +48,16 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     \$user = \$profile.userName
                     \$pass = \$profile.userPWD
 
+                    # Detectar si es SDK-style (netstandard) o .NET Framework clásico
                     \$projectFile = (Get-ChildItem -Filter "*.csproj" | Where-Object { \$_ -notlike "*ViewModels*" }).FullName
-                    Write-Host "🚀 Publicando: \$projectFile"
-
-                    # Compilar sin reconstruir ProjectReference, apuntando a la DLL de ViewModels
-                    & "${msbuildPath}" "\$projectFile" `
-                        /p:DeployOnBuild=true `
-                        /p:WebPublishMethod=MSDeploy `
-                        /p:MsDeployServiceUrl="\$url" `
-                        /p:DeployIisAppPath="\$site" `
-                        /p:UserName="\$user" `
-                        /p:Password="\$pass" `
-                        /p:Configuration=${CONFIGURATION} `
-                        /p:AllowUntrustedCertificate=true `
-                        /p:VisualStudioVersion=17.0 `
-                        /p:BuildProjectReferences=false `
-                        /p:ReferencePath="${env.REPO_PATH}\\ViewModels\\bin"
+                    \$projContent = Get-Content \$projectFile
+                    if (\$projContent -match '<Project Sdk="Microsoft.NET.Sdk">') {
+                        Write-Host "🚀 Proyecto SDK-style detectado, usando dotnet msbuild"
+                        dotnet msbuild "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:minimal
+                    } else {
+                        Write-Host "🚀 Proyecto .NET Framework detectado, usando MSBuild clásico"
+                        & "${msbuildPath}" "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:minimal /p:VisualStudioVersion=17.0
+                    }
                 """
             }
         }
