@@ -42,7 +42,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
                         /p:AllowUntrustedCertificate=true `
-                        /p:BuildProjectReferences=true `
+                        /p:BuildProjectReferences=false `
                         /maxcpucount
                 """
             }
