@@ -7,7 +7,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
         dir("${env.REPO_PATH}") {
             bat """
                 echo 📦 Restaurando paquetes NuGet para ${api}...
-                nuget restore ApiCrmVitalea.sln -PackagesDirectory ..\\packages
+                nuget restore ${env.REPO_PATH}\\ApiCrmVitalea.sln -PackagesDirectory "${env.REPO_PATH}\\packages"
             """
         }
     }
