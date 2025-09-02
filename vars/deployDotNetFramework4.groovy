@@ -37,7 +37,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
                     # Publicar toda la solución
-                    & "${msbuildPath}" "${apiConfig.CS_SOLUTION_PATH}" `
+                    & "${msbuildPath}" "${env.WORKSPACE}" `
                         /p:DeployOnBuild=true `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `

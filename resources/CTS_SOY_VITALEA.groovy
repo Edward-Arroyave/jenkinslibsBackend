@@ -6,7 +6,7 @@ return [
 
     APIS: [
         ApiCrmVitalea: [
-            REPO_PATH: "${env.REPO_PATH}",
+            REPO_PATH: "${env.REPO_PATH}/ApiCrmVitalea",
             CREDENCIALES: [
                 test: "PROFILE_CTS_VIOLETA_ApiCrmVitalea_TEST",
                 demo: ""
