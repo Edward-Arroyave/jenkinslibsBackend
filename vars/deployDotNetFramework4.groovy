@@ -1,7 +1,7 @@
 def call(api, configCompleto, config, CONFIGURATION) {
 
     // Ruta MSBuild 2017
-    def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\15.0\\Bin\\MSBuild.exe"
+    def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\BuildTools\\MSBuild\\15.0\\Bin\\MSBuild.exe"
 
     stage("Restore ${api}") {
         dir("${env.REPO_PATH}") {
@@ -52,7 +52,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
                     # Compilar y publicar la solución legacy
-                    &   "${msbuildPath}" "ApiCrmVitalea.sln" `
+                    &   "${msbuildPath}" "ApiCrmVitalea\\ApiCrmVitalea.csproj" `
                         /p:DeployOnBuild=false `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
