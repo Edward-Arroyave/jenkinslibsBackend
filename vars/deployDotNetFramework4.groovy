@@ -45,7 +45,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
                     # Compilar y publicar la solución legacy
-                    &   "${msbuildPath}" "ApiCrmVitalea\\ApiCrmVitalea.csproj" `
+                    &   " dotnet msbuild "ApiCrmVitalea.sln" `
                         /p:DeployOnBuild=false `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
