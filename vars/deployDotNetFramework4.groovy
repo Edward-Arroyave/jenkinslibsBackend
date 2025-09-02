@@ -1,8 +1,10 @@
 def call(api, configCompleto, config, CONFIGURATION) {
 
-    // Ruta MSBuild 2017
+    // Ruta MSBuild 2022 x64
     def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\amd64\\MSBuild.exe"
 
+    // Ruta a los targets de WebApplications
+    def vsToolsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Microsoft\\VisualStudio\\v17.0\\WebApplications"
 
     stage("Restore ${api}") {
         dir("${env.REPO_PATH}") {
@@ -17,13 +19,12 @@ def call(api, configCompleto, config, CONFIGURATION) {
         dir("${env.REPO_PATH}\\ViewModels") {
             bat """
                 echo 🔧 Compilando ViewModels.csproj (.NET Standard)...
-                 dotnet restore ViewModels.csproj --verbosity normal
+                dotnet restore ViewModels.csproj --verbosity normal
             """
         }
     }
 
-
-     stage("Restore ${api}") {
+    stage("Restore ${api}") {
         dir("${env.REPO_PATH}\\ApiCrmVitalea") {
             bat """
                 echo 📦 Restaurando paquetes NuGet...
@@ -31,8 +32,6 @@ def call(api, configCompleto, config, CONFIGURATION) {
             """
         }
     }
-
-
 
     stage("Deploy ${api} (.NET Framework 4.x)") {
         def apiConfig = [
@@ -55,6 +54,9 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🔗 URL: \$(\$profile.publishUrl)"
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
+                    # Configurar MSBuildExtensionsPath para evitar errores de importación
+                    \$env:MSBuildExtensionsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild"
+
                     # Compilar y publicar la solución legacy
                     &   "${msbuildPath}" "ApiCrmVitalea.csproj" `
                         /p:DeployOnBuild=true `
@@ -64,6 +66,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                         /p:BuildProjectReferences=true `
                         /p:TargetFrameworkVersion=v4.7.2 `
                         /p:VisualStudioVersion=15.0 `
+                        /p:VSToolsPath="${vsToolsPath}" `
                         /p:ImportDirectoryBuildProps=true `
                         /p:ImportDirectoryBuildTargets=true `
                         /maxcpucount
