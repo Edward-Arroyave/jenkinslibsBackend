@@ -58,7 +58,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     \$env:MSBuildExtensionsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild"
 
                     # Compilar y publicar la solución legacy
-                    &   "${msbuildPath}" "ApiCrmVitalea.csproj" `
+                    &   "${msbuildPath}" "ApiCrmVitalea.sln" `
                         /p:DeployOnBuild=true `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
