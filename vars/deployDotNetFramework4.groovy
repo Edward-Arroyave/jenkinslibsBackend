@@ -11,13 +11,14 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
     // Compilar proyectos SDK-style primero (ej: ViewModels)
     stage("Build SDK-style projects") {
-        dir("${configCompleto.APIS[api].REPO_PATH}") {
-            bat """
-                echo 🚀 Compilando librerías SDK-style con dotnet...
-                dotnet build ViewModels\\ViewModels.csproj -c ${CONFIGURATION} -o ..\\bin
-            """
-        }
+    dir("${env.REPO_PATH}/ViewModels") {
+        bat """
+            echo 🚀 Compilando librerías SDK-style con dotnet...
+            dotnet build ViewModels.csproj -c ${CONFIGURATION} -o ..\\bin
+        """
     }
+}
+
 
     stage("Deploy ${api} (.NET 4.x)") {
         def apiConfig = [
