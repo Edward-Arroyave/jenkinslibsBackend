@@ -64,7 +64,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
                     # Compilar y publicar la solución legacy
                     &   "${msbuildPath}" "ApiCrmVitalea.csproj" `
-                        /p:DeployOnBuild=true `
+                        /p:DeployOnBuild=false `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
                         /p:AllowUntrustedCertificate=true `
