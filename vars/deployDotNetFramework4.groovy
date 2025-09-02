@@ -56,16 +56,16 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
                     # Compilar y publicar la solución legacy
-                    &   "${msbuildPath}" "ApiCrmVitalea.sln" `
-                        /p:DeployOnBuild=false `
+                    &   "${msbuildPath}" "ApiCrmVitalea.csproj" `
+                        /p:DeployOnBuild=true `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
-                        /p:AllowUntrustedCertificate=false `
-                        /p:BuildProjectReferences=false `
+                        /p:AllowUntrustedCertificate=true `
+                        /p:BuildProjectReferences=true `
                         /p:TargetFrameworkVersion=v4.7.2 `
                         /p:VisualStudioVersion=15.0 `
-                        /p:ImportDirectoryBuildProps=flase `
-                        /p:ImportDirectoryBuildTargets=false `
+                        /p:ImportDirectoryBuildProps=true `
+                        /p:ImportDirectoryBuildTargets=true `
                         /maxcpucount
                 """
             }
