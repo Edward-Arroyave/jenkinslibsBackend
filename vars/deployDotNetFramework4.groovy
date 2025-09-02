@@ -4,13 +4,15 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
     // Restaurar paquetes NuGet solo para proyectos .NET Framework
     stage("Restore ${api} (.NET 4.x)") {
-        bat """
-            echo 📦 Restaurando paquetes NuGet para ${api}...
-            nuget restore ${api}.csproj -PackagesDirectory ..\\packages
-        """
+        dir("${env.REPO_PATH}/${api}") {
+            bat """
+                echo 📦 Restaurando paquetes NuGet para ${api}...
+                nuget restore ${api}.csproj -PackagesDirectory ..\\packages
+            """
+        }
     }
 
-    // Despliegue del proyecto .NET Framework con MSBuild (sin recompilar referencias SDK-style)
+    // Despliegue del proyecto .NET Framework usando MSBuild y perfil de publicación
     stage("Deploy ${api} (.NET 4.x)") {
         def apiConfig = [
             CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
@@ -34,13 +36,20 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🔗 URL: \$(\$profile.publishUrl)"
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
-                    # Ejecutar MSBuild con parámetros de publicación
-                    & "${msbuildPath}" "\$env:CS_PROJ_PATH" `
+                    \$url = \$profile.publishUrl
+                    \$site = \$profile.msdeploySite
+                    \$user = \$profile.userName
+                    \$pass = \$profile.userPWD
+
+                    \$projectFile = (Get-ChildItem -Filter "*.csproj" | Where-Object { \$_ -notlike "*ViewModels*" }).FullName
+
+                    Write-Host "🚀 Publicando: \$projectFile"
+
+                    & "${msbuildPath}" "\$projectFile" `
                         /p:DeployOnBuild=true `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
                         /p:AllowUntrustedCertificate=true `
-                        /p:VisualStudioVersion=17.0 `
                         /p:BuildProjectReferences=false
                 """
             }
