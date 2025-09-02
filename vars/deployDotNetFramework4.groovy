@@ -1,7 +1,6 @@
 def call(api, configCompleto, config, CONFIGURATION) {
 
     def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe"
-    def dotnetPath = "dotnet" // asumimos que dotnet está en PATH
 
     // 1️⃣ Restaurar paquetes NuGet solo para proyectos .NET Framework
     stage("Restore ${api} (.NET 4.x)") {
@@ -11,17 +10,17 @@ def call(api, configCompleto, config, CONFIGURATION) {
         """
     }
 
-    // 2️⃣ Compilar proyectos SDK-style primero (ej: ViewModels)
+    // 2️⃣ Compilar librerías SDK-style primero (ej: ViewModels)
     stage("Build SDK-style projects") {
         dir("${env.REPO_PATH}/ViewModels") {
             bat """
                 echo 🚀 Compilando librerías SDK-style con dotnet...
-                ${dotnetPath} build ViewModels.csproj -c ${CONFIGURATION} -o ..\\bin
+                dotnet build ViewModels.csproj -c ${CONFIGURATION} -o ..\\bin
             """
         }
     }
 
-    // 3️⃣ Despliegue del proyecto .NET Framework sin recompilar referencias
+    // 3️⃣ Desplegar proyecto .NET Framework usando DLLs compiladas
     stage("Deploy ${api} (.NET 4.x)") {
         def apiConfig = [
             CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
@@ -50,12 +49,10 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     \$user = \$profile.userName
                     \$pass = \$profile.userPWD
 
-                    # Buscar el .csproj de la API, ignorando librerías SDK-style
+                    # Usar DLL compiladas en lugar de ProjectReference
                     \$projectFile = (Get-ChildItem -Filter "*.csproj" | Where-Object { \$_ -notlike "*ViewModels*" }).FullName
+                    Write-Host "🚀 Publicando: \$projectFile usando DLLs precompiladas de ViewModels"
 
-                    Write-Host "🚀 Publicando: \$projectFile"
-
-                    # Ejecutar MSBuild directamente, evitando que intente resolver SDK virtual
                     & "${msbuildPath}" "\$projectFile" `
                         /p:DeployOnBuild=true `
                         /p:WebPublishMethod=MSDeploy `
