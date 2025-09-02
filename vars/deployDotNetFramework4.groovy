@@ -38,7 +38,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
                     # Publicar toda la solución
                     & "${msbuildPath}" "${env.REPO_PATH}" `
-                        /p:DeployOnBuild=false `
+                        /p:DeployOnBuild=true `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
                         /p:AllowUntrustedCertificate=false `
