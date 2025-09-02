@@ -2,7 +2,8 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
     def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe"
 
-    stage("Restore ${api} (.NET 4.x & SDK)") {
+    // Restaurar paquetes NuGet solo para proyectos .NET Framework
+    stage("Restore ${api} (.NET 4.x)") {
         bat """
             echo 📦 Restaurando paquetes NuGet para ${api}...
             nuget restore ${api}.csproj -PackagesDirectory ..\\packages
@@ -11,15 +12,15 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
     // Compilar proyectos SDK-style primero (ej: ViewModels)
     stage("Build SDK-style projects") {
-    dir("${env.REPO_PATH}/ViewModels") {
-        bat """
-            echo 🚀 Compilando librerías SDK-style con dotnet...
-            dotnet build ViewModels.csproj -c ${CONFIGURATION} -o ..\\bin
-        """
+        dir("${env.REPO_PATH}/ViewModels") {
+            bat """
+                echo 🚀 Compilando librerías SDK-style con dotnet...
+                dotnet build ViewModels.csproj -c ${CONFIGURATION} -o ..\\bin
+            """
+        }
     }
-}
 
-
+    // Despliegue del proyecto .NET Framework sin recompilar referencias
     stage("Deploy ${api} (.NET 4.x)") {
         def apiConfig = [
             CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
@@ -52,7 +53,17 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
                     Write-Host "🚀 Publicando: \$projectFile"
 
-                    & "${msbuildPath}" "\$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="\$url" /p:DeployIisAppPath="\$site" /p:UserName="\$user" /p:Password="\$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:minimal /p:VisualStudioVersion=17.0
+                    & "${msbuildPath}" "\$projectFile" `
+                        /p:DeployOnBuild=true `
+                        /p:WebPublishMethod=MSDeploy `
+                        /p:MsDeployServiceUrl="\$url" `
+                        /p:DeployIisAppPath="\$site" `
+                        /p:UserName="\$user" `
+                        /p:Password="\$pass" `
+                        /p:Configuration=${CONFIGURATION} `
+                        /p:AllowUntrustedCertificate=true `
+                        /p:VisualStudioVersion=17.0 `
+                        /p:BuildProjectReferences=false
                 """
             }
         }
