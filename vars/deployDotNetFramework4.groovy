@@ -1,163 +1,150 @@
 def call(api, configCompleto, config, CONFIGURATION) {
-
     // Ruta MSBuild 2022 x64
     def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\amd64\\MSBuild.exe"
-
+    
     // Ruta padre de WebApplications
     def vsToolsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Microsoft\\VisualStudio\\v17.0"
-
+    
     // Ruta a los SDKs de .NET instalados
     def dotnetSdksPath = "C:\\Program Files\\dotnet\\sdk\\6.0.428\\Sdks"
 
-    stage("Backup ApiCrmVitalea.csproj") {
-        dir("${env.REPO_PATH}\\ApiCrmVitalea") {
-            bat """
-                copy ApiCrmVitalea.csproj ApiCrmVitalea.csproj.backup
-            """
-        }
-    }
-
-    stage("Patch Directory.Build.props") {
+    stage("Backup and Modify Project") {
         dir("${env.REPO_PATH}") {
+            // Backup del csproj
+            bat """
+                if exist ApiCrmVitalea\\ApiCrmVitalea.csproj (
+                    copy ApiCrmVitalea\\ApiCrmVitalea.csproj ApiCrmVitalea\\ApiCrmVitalea.csproj.backup
+                )
+            """
+            
+            // Crear Directory.Build.props para evitar problemas de SDK
             writeFile file: "Directory.Build.props", text: """
 <Project>
   <PropertyGroup>
-    <!-- Evita que MSBuild intente resolver SDKs inexistentes -->
     <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
     <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+    <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
   </PropertyGroup>
 </Project>
 """
         }
     }
 
-    stage("Restore ${api}") {
+    stage("Restore and Build") {
         dir("${env.REPO_PATH}") {
+            // Restaurar paquetes NuGet (solo packages.config)
             bat """
                 echo 📦 Restaurando paquetes NuGet...
-                nuget restore "${env.REPO_PATH}\\ApiCrmVitalea.sln" -PackagesDirectory "${env.REPO_PATH}\\packages"
+                nuget restore "${env.REPO_PATH}\\ApiCrmVitalea.sln" -PackagesDirectory "${env.REPO_PATH}\\packages" -DisableParallelProcessing
             """
-        }
-    }
-
-    stage("Build SDK-style projects (.NET Standard)") {
-        dir("${env.REPO_PATH}\\ViewModels") {
+            
+            // Compilar ViewModels (.NET Standard)
+            dir("ViewModels") {
+                bat """
+                    echo 🔧 Compilando ViewModels.csproj (.NET Standard)...
+                    dotnet build ViewModels.csproj -c Release -p:MSBuildEnableWorkloadResolver=false
+                """
+            }
+            
+            // Copiar DLL de ViewModels
             bat """
-                echo 🔧 Compilando ViewModels.csproj (.NET Standard)...
-                dotnet restore ViewModels.csproj --verbosity normal
-                dotnet build ViewModels.csproj -c Release
+                echo 📂 Copiando ViewModels.dll...
+                if not exist "ApiCrmVitalea\\bin\\Release" mkdir "ApiCrmVitalea\\bin\\Release"
+                copy "ViewModels\\bin\\Release\\netstandard2.0\\ViewModels.dll" "ApiCrmVitalea\\bin\\Release\\" /Y
             """
         }
     }
 
-    stage("Copy ViewModels DLL") {
-        dir("${env.REPO_PATH}\\ViewModels\\bin\\Release\\netstandard2.0") {
-            bat """
-                echo 📂 Copiando ViewModels.dll a ApiCrmVitalea\\bin\\Release...
-                if not exist "${env.REPO_PATH}\\ApiCrmVitalea\\bin\\Release" mkdir "${env.REPO_PATH}\\ApiCrmVitalea\\bin\\Release"
-                copy ViewModels.dll "${env.REPO_PATH}\\ApiCrmVitalea\\bin\\Release\\" /Y
-            """
-        }
-    }
-
-    stage("Modify ApiCrmVitalea.csproj") {
+    stage("Modify Project References") {
         dir("${env.REPO_PATH}\\ApiCrmVitalea") {
+            // Modificar el csproj para reemplazar la referencia al proyecto por referencia a DLL
             powershell '''
                 $csprojPath = "ApiCrmVitalea.csproj"
                 $xml = [xml](Get-Content $csprojPath)
+                
+                # Namespace para XPath
                 $ns = New-Object System.Xml.XmlNamespaceManager($xml.NameTable)
                 $ns.AddNamespace("msbuild", "http://schemas.microsoft.com/developer/msbuild/2003")
-
-                # Encontrar la referencia al proyecto ViewModels
+                
+                # Buscar y eliminar referencia al proyecto ViewModels
                 $projectReference = $xml.SelectSingleNode("//msbuild:ProjectReference[contains(@Include, 'ViewModels.csproj')]", $ns)
                 if ($projectReference) {
-                    # Remover la referencia al proyecto
                     $projectReference.ParentNode.RemoveChild($projectReference)
-
-                    # Agregar referencia a la DLL
-                    $itemGroup = $xml.CreateElement("ItemGroup", $xml.DocumentElement.NamespaceURI)
-                    $reference = $xml.CreateElement("Reference", $xml.DocumentElement.NamespaceURI)
-                    $reference.SetAttribute("Include", "ViewModels")
-                    $hintPath = $xml.CreateElement("HintPath", $xml.DocumentElement.NamespaceURI)
-                    $hintPath.InnerText = "bin\\Release\\ViewModels.dll"
-                    $reference.AppendChild($hintPath)
-                    $itemGroup.AppendChild($reference)
-                    $xml.Project.AppendChild($itemGroup)
-
-                    $xml.Save($csprojPath)
-                    Write-Host "✅ Referencia al proyecto ViewModels reemplazada por referencia a DLL."
-                } else {
-                    Write-Host "⚠️ No se encontró la referencia al proyecto ViewModels. Puede que ya sea una referencia a DLL."
+                    Write-Host "✅ Referencia al proyecto ViewModels eliminada."
                 }
+                
+                # Agregar referencia a la DLL compilada
+                $itemGroup = $xml.CreateElement("ItemGroup", $xml.DocumentElement.NamespaceURI)
+                $reference = $xml.CreateElement("Reference", $xml.DocumentElement.NamespaceURI)
+                $reference.SetAttribute("Include", "ViewModels")
+                
+                $hintPath = $xml.CreateElement("HintPath", $xml.DocumentElement.NamespaceURI)
+                $hintPath.InnerText = "bin\\Release\\ViewModels.dll"
+                $reference.AppendChild($hintPath)
+                
+                $itemGroup.AppendChild($reference)
+                $xml.Project.AppendChild($itemGroup)
+                
+                $xml.Save($csprojPath)
+                Write-Host "✅ Referencia a DLL ViewModels agregada."
             '''
         }
     }
 
-   stage("Deploy ${api} (.NET Framework 4.x)") {
-    def apiConfig = [
-        CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
-    ]
+    stage("Deploy ${api}") {
+        def apiConfig = [
+            CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
+        ]
 
-    dir("${env.REPO_PATH}\\ApiCrmVitalea") {
-        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-            powershell """
-                Write-Host "📋 Leyendo perfil de publicación..."
-                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
-
-                if (-not \$profile) {
-                    Write-Error "❌ No se encontró un perfil válido de MSDeploy"
-                    exit 1
-                }
-
-                Write-Host "✅ Perfil encontrado: \$(\$profile.profileName)"
-                Write-Host "🔗 URL: \$(\$profile.publishUrl)"
-                Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
-                Write-Host "👤 Usuario: \$(\$profile.userName)"
-
-                # Extraer los parámetros necesarios del perfil
-                \$msdeployServiceUrl = "https://\$(\$profile.publishUrl)/msdeploy.axd"
-                \$deployIisAppPath = \$profile.msdeploySite
-                \$username = \$profile.userName
-                \$password = \$profile.userPWD
-
-                # Configurar rutas críticas y deshabilitar el resolvedor de workloads
-                \$env:MSBuildExtensionsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild"
-                \$env:MSBuildSDKsPath = "${dotnetSdksPath}"
-                \$env:VSToolsPath = "${vsToolsPath}"
-                \$env:MSBuildEnableWorkloadResolver = "false"
-
-                # Compilar y publicar el proyecto .NET Framework usando parámetros directos de MSDeploy
-                & "${msbuildPath}" "ApiCrmVitalea.csproj" `
-                    /p:DeployOnBuild=true `
-                    /p:Configuration=${CONFIGURATION} `
-                    /p:AllowUntrustedCertificate=true `
-                    /p:BuildProjectReferences=false `
-                    /p:SkipResolveProjectReferences=true `
-                    /p:TargetFrameworkVersion=v4.7.2 `
-                    /p:VisualStudioVersion=17.0 `
-                    /p:VSToolsPath="${vsToolsPath}" `
-                    /p:WebPublishMethod=MSDeploy `
-                    /p:MsDeployServiceUrl="\$msdeployServiceUrl" `
-                    /p:DeployIisAppPath="\$deployIisAppPath" `
-                    /p:Username="\$username" `
-                    /p:Password="\$password" `
-                    /p:DesktopBuildPackageLocation="obj\\${CONFIGURATION}\\Package\\ApiCrmVitalea.zip" `
-                    /maxcpucount
-            """
+        dir("${env.REPO_PATH}\\ApiCrmVitalea") {
+            withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                powershell """
+                    # Leer y parsear el perfil de publicación
+                    [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                    \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+                    
+                    if (-not \$profile) {
+                        Write-Error "❌ No se encontró un perfil válido de MSDeploy"
+                        exit 1
+                    }
+                    
+                    # Configurar variables de entorno para MSBuild
+                    \$env:MSBuildExtensionsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild"
+                    \$env:MSBuildSDKsPath = "${dotnetSdksPath}"
+                    \$env:VSToolsPath = "${vsToolsPath}"
+                    \$env:MSBuildEnableWorkloadResolver = "false"
+                    
+                    # Ejecutar MSBuild con los parámetros de publicación
+                    & "${msbuildPath}" "ApiCrmVitalea.csproj" `
+                        /p:Configuration=${CONFIGURATION} `
+                        /p:DeployOnBuild=true `
+                        /p:WebPublishMethod=MSDeploy `
+                        /p:MsDeployServiceUrl="https://\$(\$profile.publishUrl)/msdeploy.axd" `
+                        /p:DeployIisAppPath="\$(\$profile.msdeploySite)" `
+                        /p:Username="\$(\$profile.userName)" `
+                        /p:Password="\$(\$profile.userPWD)" `
+                        /p:AllowUntrustedCertificate=true `
+                        /p:VisualStudioVersion=17.0 `
+                        /p:VSToolsPath="${vsToolsPath}" `
+                        /p:BuildProjectReferences=false `
+                        /p:SkipResolveProjectReferences=true `
+                        /p:TargetFrameworkVersion=v4.7.2 `
+                        /maxcpucount `
+                        /verbosity:detailed
+                """
+            }
         }
     }
-}
 
     stage("Cleanup") {
         dir("${env.REPO_PATH}") {
+            // Restaurar el csproj original y limpiar archivos temporales
             bat """
-                echo 🧹 Limpiando archivos temporales...
-                if exist Directory.Build.props del /f /q Directory.Build.props
                 if exist ApiCrmVitalea\\ApiCrmVitalea.csproj.backup (
                     copy /Y ApiCrmVitalea\\ApiCrmVitalea.csproj.backup ApiCrmVitalea\\ApiCrmVitalea.csproj
-                    del /f /q ApiCrmVitalea\\ApiCrmVitalea.csproj.backup
+                    del ApiCrmVitalea\\ApiCrmVitalea.csproj.backup
                 )
+                if exist Directory.Build.props del Directory.Build.props
             """
         }
     }
