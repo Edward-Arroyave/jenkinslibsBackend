@@ -8,49 +8,32 @@ def call(api, configCompleto, config, CONFIGURATION) {
         dir("${env.REPO_PATH}/${api}") {
             bat """
                 echo 📦 Restaurando paquetes NuGet para ${api}...
-                nuget restore ${api}.csproj -PackagesDirectory ..\\packages
+                dotnet build ViewModels.csproj -c ${CONFIGURATION} --no-restore
             """
         }
     }
 
     // Despliegue del proyecto .NET Framework usando MSBuild completo
     stage("Deploy ${api} (.NET 4.x)") {
-        def apiConfig = [
-            CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
-            CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE],
-            URL: configCompleto.APIS[api].URL[config.AMBIENTE]
-        ]
-
         dir("${apiConfig.CS_PROJ_PATH}") {
             withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                 powershell """
-                    Write-Host "📋 Leyendo perfil de publicación..."
-                    [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                    \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+                    # ... tu código de lectura de publishProfile ...
+                    
+                    $projectFile = (Get-ChildItem -Filter "*.csproj" | Where-Object { $_ -notlike "*ViewModels*" }).FullName
 
-                    if (-not \$profile) {
-                        Write-Error "❌ No se encontró un perfil válido de MSDeploy"
-                        exit 1
-                    }
+                    Write-Host "🚀 Publicando: $projectFile"
 
-                    Write-Host "✅ Perfil encontrado: \$(\$profile.profileName)"
-                    Write-Host "🔗 URL: \$(\$profile.publishUrl)"
-                    Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
-
-                    \$projectFile = (Get-ChildItem -Filter "*.csproj" | Where-Object { \$_ -notlike "*ViewModels*" }).FullName
-
-                    Write-Host "🚀 Publicando: \$projectFile"
-
-                    # ⚡ Compilar exactamente como Visual Studio, resolviendo referencias .NET Standard automáticamente
-                    & "${msbuildPath}" "\$projectFile" `
+                    & "${msbuildPath}" "$projectFile" `
                         /p:DeployOnBuild=true `
-                        /p:PublishProfile="\$profile.profileName" `
+                        /p:PublishProfile="$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
                         /p:AllowUntrustedCertificate=true `
-                        /p:BuildProjectReferences=true `
+                        /p:BuildProjectReferences=false `
                         /maxcpucount
                 """
             }
         }
     }
+
 }
