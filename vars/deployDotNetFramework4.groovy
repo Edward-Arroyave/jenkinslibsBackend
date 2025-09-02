@@ -130,7 +130,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                         /p:SkipResolveProjectReferences=true `
                         /p:TargetFrameworkVersion=v4.7.2 `
                         /maxcpucount `
-                        /verbosity:detailed
+                        /verbosity:minimal
                 """
             }
         }
