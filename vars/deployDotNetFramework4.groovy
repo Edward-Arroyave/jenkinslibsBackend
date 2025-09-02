@@ -1,7 +1,8 @@
 def call(api, configCompleto, config, CONFIGURATION) {
 
     // Ruta MSBuild 2017
-    def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Bin\\MSBuild.exe"
+    def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe"
+
 
     stage("Restore ${api}") {
         dir("${env.REPO_PATH}") {
@@ -21,11 +22,22 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
+
+     stage("Restore ${api}") {
+        dir("${env.REPO_PATH}\\ApiCrmVitalea") {
+            bat """
+                echo 📦 Restaurando paquetes NuGet...
+                nuget restore "ApiCrmVitalea.csproj" -PackagesDirectory "${env.REPO_PATH}\\packages"
+            """
+        }
+    }
+
+
     stage("Build .NET Framework projects") {
-        dir("${env.REPO_PATH}") {
+        dir("${env.REPO_PATH}\\ApiCrmVitalea") {
             bat """
                 echo 🔧 Compilando proyecto principal (.NET Framework 4.7.2)...
-                "${msbuildPath}" "ApiCrmVitalea\\ApiCrmVitalea.csproj" /p:Configuration=${CONFIGURATION} /p:TargetFrameworkVersion=v4.7.2 /maxcpucount
+                "${msbuildPath}" "ApiCrmVitalea.csproj" /p:Configuration=${CONFIGURATION} /p:TargetFrameworkVersion=v4.7.2 /maxcpucount
             """
         }
     }
