@@ -8,7 +8,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
         dir("${env.REPO_PATH}/${api}") {
             bat """
                 echo 📦 Restaurando paquetes NuGet para ${api}...
-                dotnet build ViewModels.csproj -c ${CONFIGURATION} --no-restore
+                dotnet restore ViewModels.csproj  --verbosity normal
             """
         }
     }
