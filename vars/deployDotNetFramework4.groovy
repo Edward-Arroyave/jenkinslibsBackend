@@ -1,5 +1,6 @@
 def call(api, configCompleto, config, CONFIGURATION) {
-    def msbuildPath = "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\msbuild.exe"
+    // Cambiar la ruta a MSBuild moderno
+    def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe"
 
     stage("Restore ${api} (.NET 4.x)") {
         bat """
@@ -40,7 +41,17 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
                     Write-Host "🚀 Publicando: \$projectFile"
 
-                    & "${msbuildPath}" "$projectFile" /p:DeployOnBuild=true /p:WebPublishMethod=MSDeploy /p:MsDeployServiceUrl="$url" /p:DeployIisAppPath="$site" /p:UserName="$user" /p:Password="$pass" /p:Configuration=${CONFIGURATION} /p:AllowUntrustedCertificate=true /verbosity:minimal /p:VisualStudioVersion=17.0
+                    & "${msbuildPath}" "\$projectFile" `
+                        /p:DeployOnBuild=true `
+                        /p:WebPublishMethod=MSDeploy `
+                        /p:MsDeployServiceUrl="\$url" `
+                        /p:DeployIisAppPath="\$site" `
+                        /p:UserName="\$user" `
+                        /p:Password="\$pass" `
+                        /p:Configuration=${CONFIGURATION} `
+                        /p:AllowUntrustedCertificate=true `
+                        /verbosity:minimal `
+                        /p:VisualStudioVersion=17.0
                 """
             }
         }
