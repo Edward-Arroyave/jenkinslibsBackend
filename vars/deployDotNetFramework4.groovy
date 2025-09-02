@@ -67,8 +67,8 @@ def call(api, configCompleto, config, CONFIGURATION) {
                         /p:TargetFrameworkVersion=v4.7.2 `
                         /p:VisualStudioVersion=15.0 `
                         /p:VSToolsPath="${vsToolsPath}" `
-                        /p:ImportDirectoryBuildProps=false `
-                        /p:ImportDirectoryBuildTargets=false `
+                        /p:ImportDirectoryBuildProps=true `
+                        /p:ImportDirectoryBuildTargets=true `
                         /maxcpucount
                 """
             }
