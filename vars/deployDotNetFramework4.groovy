@@ -38,7 +38,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
             CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
         ]
 
-        dir("${env.REPO_PATH}") {
+        dir("${env.REPO_PATH}\\ApiCrmVitalea") {
             withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                 powershell """
                     Write-Host "📋 Leyendo perfil de publicación..."
@@ -58,7 +58,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     \$env:MSBuildExtensionsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild"
 
                     # Compilar y publicar la solución legacy
-                    &   "${msbuildPath}" "ApiCrmVitalea.sln" `
+                    &   "${msbuildPath}" "ApiCrmVitalea.csproj" `
                         /p:DeployOnBuild=true `
                         /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
