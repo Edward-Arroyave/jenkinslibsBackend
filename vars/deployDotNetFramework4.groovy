@@ -14,10 +14,11 @@ def call(api, configCompleto, config, CONFIGURATION) {
         dir("${env.REPO_PATH}/ViewModels") {
             bat """
                 echo 🚀 Compilando librerías SDK-style con dotnet...
-                dotnet build ViewModels\\ViewModels.csproj -c ${CONFIGURATION} -o ..\\bin
+                dotnet build ViewModels.csproj -c ${CONFIGURATION} -o ..\\bin
             """
         }
     }
+
 
     stage("Deploy ${api} (.NET 4.x)") {
         def apiConfig = [
