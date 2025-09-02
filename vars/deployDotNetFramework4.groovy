@@ -2,7 +2,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
     def msbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe"
 
-    // 1️⃣ Restaurar paquetes NuGet solo para proyectos .NET Framework
+    // Restaurar paquetes NuGet solo para proyectos .NET Framework
     stage("Restore ${api} (.NET 4.x)") {
         bat """
             echo 📦 Restaurando paquetes NuGet para ${api}...
@@ -10,17 +10,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
         """
     }
 
-    // 2️⃣ Compilar librerías SDK-style primero (ej: ViewModels)
-    stage("Build SDK-style projects") {
-        dir("${env.REPO_PATH}/ViewModels") {
-            bat """
-                echo 🚀 Compilando librerías SDK-style con dotnet...
-                dotnet build ViewModels.csproj -c ${CONFIGURATION} -o ..\\bin
-            """
-        }
-    }
-
-    // 3️⃣ Desplegar proyecto .NET Framework usando DLLs compiladas
+    // Despliegue del proyecto .NET Framework con MSBuild (sin recompilar referencias SDK-style)
     stage("Deploy ${api} (.NET 4.x)") {
         def apiConfig = [
             CS_PROJ_PATH: configCompleto.APIS[api].REPO_PATH,
@@ -44,27 +34,14 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     Write-Host "🔗 URL: \$(\$profile.publishUrl)"
                     Write-Host "🏗️ Sitio: \$(\$profile.msdeploySite)"
 
-                    \$url = \$profile.publishUrl
-                    \$site = \$profile.msdeploySite
-                    \$user = \$profile.userName
-                    \$pass = \$profile.userPWD
-
-                    # Usar DLL compiladas en lugar de ProjectReference
-                    \$projectFile = (Get-ChildItem -Filter "*.csproj" | Where-Object { \$_ -notlike "*ViewModels*" }).FullName
-                    Write-Host "🚀 Publicando: \$projectFile usando DLLs precompiladas de ViewModels"
-
-                    & "${msbuildPath}" "\$projectFile" `
+                    # Ejecutar MSBuild con parámetros de publicación
+                    & "${msbuildPath}" "\$env:CS_PROJ_PATH" `
                         /p:DeployOnBuild=true `
-                        /p:WebPublishMethod=MSDeploy `
-                        /p:MsDeployServiceUrl="\$url" `
-                        /p:DeployIisAppPath="\$site" `
-                        /p:UserName="\$user" `
-                        /p:Password="\$pass" `
+                        /p:PublishProfile="\$profile.profileName" `
                         /p:Configuration=${CONFIGURATION} `
                         /p:AllowUntrustedCertificate=true `
                         /p:VisualStudioVersion=17.0 `
-                        /p:BuildProjectReferences=false `
-                        /p:RestorePackages=false
+                        /p:BuildProjectReferences=false
                 """
             }
         }
