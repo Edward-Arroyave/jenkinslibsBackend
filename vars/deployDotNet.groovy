@@ -2,7 +2,7 @@ def call (api, configCompleto, config, CONFIGURATION) {
     stage("Restore ${api}") {
         powershell """
             Write-Host "📄 Restaurando dependencias de ${api}..."
-            dotnet restore ${api}.csproj --verbosity normal
+            dotnet restore ${api}.csproj --verbosity minimal
         """
     }
 
