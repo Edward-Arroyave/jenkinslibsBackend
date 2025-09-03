@@ -67,7 +67,7 @@ def call(Map config) {
         try {
             office365ConnectorSend(
                 status: status,
-                message: "${emoji} ${statusText}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                message: "Buenas tardes ingenieros se confirma despliegue.${emoji} ${statusText}: ${env.JOB_NAME} #${env.BUILD_NUMBER} ",
                 adaptiveCards: true,
                 color: color,
                 factDefinitions: [
