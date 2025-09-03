@@ -19,10 +19,8 @@
 
 return [
     AMBIENTES: [
-        Test: [ BRANCH: "test" ],
-      
+        Test: [ BRANCH: "test" ]
     ],
-
     APIS: [
         ApiSoyVioleta: [
             REPO_PATH: "${env.REPO_PATH}/ApiCrmVitalea",
