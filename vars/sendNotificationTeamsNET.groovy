@@ -65,52 +65,28 @@ def call(Map config) {
     // Enviar notificación a Teams 
     wrap([$class: 'BuildUser']) {
         try {
-            // Texto plano para fallback
-            def apisSuccess = config.APIS_SUCCESSFUL ?: "Ninguna"
-            def apisFailure = config.APIS_FAILURE ?: "Ninguna"
-
             office365ConnectorSend(
                 status: status,
-                message: "👋 Buen día ingenieros.  \n\nLes informamos el estado del proceso de despliegue ejecutado.",
+            message: """
+            👋 Buen día ingenieros.  
+
+            Les informamos el estado del proceso de despliegue ejecutado:  
+            ${emoji} Estado: ${statusText}  
+            📌 Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}  
+
+            Agradecemos su atención y quedamos atentos a observaciones o comentarios adicionales.  
+            """,
+                adaptiveCards: true,
                 color: color,
-                adaptiveCards: [
-                    [
-                        "@type": "MessageCard",
-                        "@context": "http://schema.org/extensions",
-                        "summary": "Reporte de despliegue",
-                        "themeColor": color,
-                        "sections": [[
-                            "activityTitle": "${emoji} Estado: ${statusText}",
-                            "facts": [
-                                ["name": "Usuario ejecutor", "value": "${env.BUILD_USER_ID}"],
-                                ["name": "Entorno", "value": "${config.ENVIRONMENT}"],
-                                ["name": "Autor del Commit", "value": "${env.COMMIT_AUTHOR}"],
-                                ["name": "Mensaje del Commit", "value": "${env.COMMIT_MESSAGE}"],
-                                ["name": "Hash del Commit", "value": "${env.COMMIT_HASH}"],
-                                ["name": "Duración", "value": durationText]
-                            ],
-                            "markdown": true
-                        ]],
-                        "potentialAction": []
-                    ],
-                    [
-                        "type": "AdaptiveCard",
-                        "version": "1.2",
-                        "body": [
-                            [
-                                "type": "TextBlock",
-                                "text": "✅ APIs Exitosas: ${apisSuccess}",
-                                "color": "good",
-                                "wrap": true
-                            ],
-                            [
-                                "type": "TextBlock",
-                                "text": "❌ APIs con Errores: ${apisFailure}",
-                                "color": "attention",
-                                "wrap": true
-                            ]
-                        ]
-                    ]
+                factDefinitions: [
+                    [name: "Usuario ejecutor", template: "${env.BUILD_USER_ID}"],
+                    [name: "Entorno", template: "${config.ENVIRONMENT}"],
+                    [name: "Autor del Commit", template: "${env.COMMIT_AUTHOR}"],
+                    [name: "Mensaje del Commit", template: "${env.COMMIT_MESSAGE}"],
+                    [name: "Hash del Commit", template: "${env.COMMIT_HASH}"],
+                    [name: "Duración", template: durationText],
+                    [name: "APIs Exitosas", template: "${config.APIS_SUCCESSFUL}"],
+                    [name: "APIs con Errores", template: "${config.APIS_FAILURE}"],
                 ]
             )
             echo "📢 Notificación enviada a Microsoft Teams de manera exitosa."
@@ -119,7 +95,6 @@ def call(Map config) {
             echo "📋 La información fue presentada en consola."
         }
     }
-
 
     // Log final formal
     echo "${logEmoji} Estado Final: ${statusText} | Duración: ${durationText}"
