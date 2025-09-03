@@ -74,7 +74,7 @@ def call(Map config) {
                                         deployDotNetFramework4(api, configCompleto, config, CONFIGURATION)
                                     } else {
                                         echo "⚙️ Proyecto ${api} detectado como .NET Core / .NET 5+"
-                                        deployDotNet(api, configCompleto, config, CONFIGURATION) .n
+                                        deployDotNet(api, configCompleto, config, CONFIGURATION)
                                     }
                                 }
 
@@ -122,8 +122,7 @@ def call(Map config) {
                     sendNotificationTeamsNET([
                         APIS_SUCCESSFUL:  apisExitosas.join(', '),
                         APIS_FAILURE: apisFallidas.join(', '),
-                        ENVIRONMENT: config.AMBIENTE,
-                        ambiente: config.AMBIENTE
+                        ENVIRONMENT: config.AMBIENTE
                     ])
                 }
                 cleanWs()
