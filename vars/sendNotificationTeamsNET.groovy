@@ -1,4 +1,4 @@
-def call(Map config, String ambiente) {
+def call(Map config) {
 
     // Obtener duración real del build en milisegundos
     def durationMillis = currentBuild.duration ?: (currentBuild.getTimeInMillis() - currentBuild.getStartTimeInMillis())
@@ -43,7 +43,7 @@ def call(Map config, String ambiente) {
     echo "📊 =============================== NOTIFICACIÓN TEAMS ==============================="
     echo "${logEmoji} Estado del Build: ${statusText}"
     echo "👤 Triggered by: ${env.BUILD_USER_ID ?: 'N/A'}"
-    echo "🌍 Environment: ${ambiente }"
+    echo "🌍 Environment: ${config.ENVIRONMENT ?: 'N/A'}"
     echo "⏱️  Duration: ${durationText}"
     echo "🔢 Build: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
     
@@ -67,12 +67,12 @@ def call(Map config, String ambiente) {
         try {
             office365ConnectorSend(
                 status: status,
-                message: "Buen día ingenieros ${emoji} ${statusText}: ${env.JOB_NAME} #${env.BUILD_NUMBER} ",
+                message: "${emoji} ${statusText}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 adaptiveCards: true,
                 color: color,
                 factDefinitions: [
                     [name: "Build triggered by", template: "${env.BUILD_USER_ID}"],
-                    [name: "Environment", template: "${ambiente}"],
+                    [name: "Environment", template: "${config.ENVIRONMENT}"],
                     [name: "Commit Author", template: "${env.COMMIT_AUTHOR}"],
                     [name: "Commit Message", template: "${env.COMMIT_MESSAGE}"],
                     [name: "Commit Hash", template: "${env.COMMIT_HASH}"],
