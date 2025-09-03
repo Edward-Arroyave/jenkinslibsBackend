@@ -7,82 +7,23 @@ def call(api, configCompleto, config, CONFIGURATION) {
         dotnetSdk : "C:\\Program Files\\dotnet\\sdk\\6.0.428\\Sdks"
     ]
 
-    // --- Funciones auxiliares ---
-    def backupCsproj = {
-        bat """
-            echo 📂 [Backup] Verificando archivo ApiCrmVitalea.csproj...
-            if exist ApiCrmVitalea\\ApiCrmVitalea.csproj (
-                echo 💾 [Backup] Creando respaldo de ApiCrmVitalea.csproj...
-                copy ApiCrmVitalea\\ApiCrmVitalea.csproj ApiCrmVitalea\\ApiCrmVitalea.csproj.backup
-                echo ✅ [Backup] Respaldo creado exitosamente.
-            ) else (
-                echo ⚠️ [Backup] No se encontró ApiCrmVitalea.csproj, se omite el respaldo.
-            )
-        """
-    }
 
-    def restoreCsproj = {
-        bat """
-            echo 🔄 [Restore] Restaurando ApiCrmVitalea.csproj original...
-            if exist ApiCrmVitalea\\ApiCrmVitalea.csproj.backup (
-                copy /Y ApiCrmVitalea\\ApiCrmVitalea.csproj.backup ApiCrmVitalea\\ApiCrmVitalea.csproj
-                del ApiCrmVitalea\\ApiCrmVitalea.csproj.backup
-                echo ✅ [Restore] Archivo restaurado exitosamente.
-            ) else (
-                echo ⚠️ [Restore] No se encontró respaldo, no se realizó la restauración.
-            )
-            if exist Directory.Build.props (
-                echo 🧹 [Restore] Eliminando archivo temporal Directory.Build.props...
-                del Directory.Build.props
-            )
-        """
-    }
 
-    def createBuildProps = {
+    stage("Modify file Directory.Build.props")  {
+        echo "🔒 [Stage] Iniciando respaldo y configuración inicial..."
+        dir("${env.REPO_PATH}") {
         echo "⚙️ [Config] Creando archivo Directory.Build.props temporal..."
         writeFile file: "Directory.Build.props", text: """
         <Project>
         <PropertyGroup>
-            <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
-            <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
-            <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
+        <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+        <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+        <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
         </PropertyGroup>
         </Project>
         """
         echo "✅ [Config] Archivo Directory.Build.props creado."
-    }
-
-    def compileViewModels = {
-        dir("ViewModels") {
-            bat """
-                echo 🔧 [Build] Compilando ViewModels.csproj (.NET Standard)...
-                dotnet build ViewModels.csproj -c Release -p:MSBuildEnableWorkloadResolver=false
-                if %ERRORLEVEL% neq 0 (
-                    echo ❌ [Build] Error al compilar ViewModels.csproj
-                    exit /b %ERRORLEVEL%
-                )
-                echo ✅ [Build] Compilación de ViewModels.csproj completada.
-            """
-        }
-        bat """
-            echo 📂 [Copy] Copiando ViewModels.dll al proyecto principal...
-            if not exist "ApiCrmVitalea\\bin\\Release" mkdir "ApiCrmVitalea\\bin\\Release"
-            copy "ViewModels\\bin\\Release\\netstandard2.0\\ViewModels.dll" "ApiCrmVitalea\\bin\\Release\\" /Y
-            if %ERRORLEVEL% neq 0 (
-                echo ❌ [Copy] Error al copiar ViewModels.dll
-                exit /b %ERRORLEVEL%
-            )
-            echo ✅ [Copy] ViewModels.dll copiado correctamente.
-        """
-    }
-
-    // --- Etapas del pipeline ---
-
-    stage("Backup and Modify Project") {
-        echo "🔒 [Stage] Iniciando respaldo y configuración inicial..."
-        dir("${env.REPO_PATH}") {
-            backupCsproj()
-            createBuildProps()
+        
         }
     }
 
@@ -98,10 +39,40 @@ def call(api, configCompleto, config, CONFIGURATION) {
                 )
                 echo ✅ [NuGet] Paquetes restaurados correctamente.
             """
-            compileViewModels()
+          
         }
     }
 
+    stage("Build ViewModels") {
+            dir("${env.REPO_PATH}\\ViewModels") {
+                bat """
+                    echo 🔧 [Build] Compilando ViewModels.csproj (.NET Standard)...
+                    dotnet build ViewModels.csproj -c Release -p:MSBuildEnableWorkloadResolver=false
+                    if %ERRORLEVEL% neq 0 (
+                        echo ❌ [Build] Error al compilar ViewModels.csproj
+                        exit /b %ERRORLEVEL%
+                    )
+                    echo ✅ [Build] Compilación de ViewModels.csproj completada.
+                """
+            }
+    }
+
+
+    stage("Copy ViewModels.dll") {
+        dir("${env.REPO_PATH}\\ViewModels") {
+            
+            bat """
+                    echo 📂 [Copy] Copiando ViewModels.dll al proyecto principal...
+                    if not exist "ApiCrmVitalea\\bin\\Release" mkdir "ApiCrmVitalea\\bin\\Release"
+                    copy "ViewModels\\bin\\Release\\netstandard2.0\\ViewModels.dll" "ApiCrmVitalea\\bin\\Release\\" /Y
+                    if %ERRORLEVEL% neq 0 (
+                        echo ❌ [Copy] Error al copiar ViewModels.dll
+                        exit /b %ERRORLEVEL%
+                    )
+                    echo ✅ [Copy] ViewModels.dll copiado correctamente.
+                """
+        }
+    }
     stage("Modify Project References") {
         echo "📝 [Stage] Modificando referencias en ApiCrmVitalea.csproj..."
         dir("${env.REPO_PATH}\\ApiCrmVitalea") {
@@ -182,11 +153,6 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
-    stage("Cleanup") {
-        echo "🧹 [Stage] Ejecutando limpieza final..."
-        dir("${env.REPO_PATH}") {
-            restoreCsproj()
-        }
-        echo "✅ [Stage] Limpieza completada."
-    }
+    
 }
+
