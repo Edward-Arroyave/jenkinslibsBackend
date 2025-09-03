@@ -41,14 +41,14 @@ def call(api, configCompleto, config, CONFIGURATION) {
     def createBuildProps = {
         echo "⚙️ [Config] Creando archivo Directory.Build.props temporal..."
         writeFile file: "Directory.Build.props", text: """
-<Project>
-  <PropertyGroup>
-    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
-    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
-    <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
-  </PropertyGroup>
-</Project>
-"""
+        <Project>
+        <PropertyGroup>
+            <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+            <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+            <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
+        </PropertyGroup>
+        </Project>
+        """
         echo "✅ [Config] Archivo Directory.Build.props creado."
     }
 
