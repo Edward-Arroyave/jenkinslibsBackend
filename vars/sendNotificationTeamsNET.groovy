@@ -38,57 +38,65 @@ def call(Map config) {
         }
     }
 
-    // Logs mejorados para Ocean/consola
+    // Logs empresariales para Ocean/consola
     echo ""
-    echo "📊 =============================== NOTIFICACIÓN TEAMS ==============================="
-    echo "${logEmoji} Estado del Build: ${statusText}"
-    echo "👤 Triggered by: ${env.BUILD_USER_ID ?: 'N/A'}"
-    echo "🌍 Environment: ${config.ENVIRONMENT ?: 'N/A'}"
-    echo "⏱️  Duration: ${durationText}"
-    echo "🔢 Build: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-    
+    echo "📊 =========================== REPORTE DE EJECUCIÓN ==========================="
+    echo "📌 Estado del Proceso: ${statusText}"
+    echo "👤 Usuario que ejecutó: ${env.BUILD_USER_ID ?: 'No disponible'}"
+    echo "🌍 Entorno: ${config.ENVIRONMENT ?: 'No definido'}"
+    echo "⏱️ Duración total: ${durationText}"
+    echo "🔢 Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+
     if (env.COMMIT_AUTHOR) {
-        echo "👨‍💻 Commit Author: ${env.COMMIT_AUTHOR}"
+        echo "👨‍💻 Autor del Commit: ${env.COMMIT_AUTHOR}"
     }
     if (env.COMMIT_MESSAGE) {
-        echo "📝 Commit Message: ${env.COMMIT_MESSAGE.take(80)}${env.COMMIT_MESSAGE.length() > 80 ? '...' : ''}"
+        echo "📝 Mensaje del Commit: ${env.COMMIT_MESSAGE.take(80)}${env.COMMIT_MESSAGE.length() > 80 ? '...' : ''}"
     }
     if (env.COMMIT_HASH) {
-        echo "🔗 Commit Hash: ${env.COMMIT_HASH.take(8)}"
+        echo "🔗 Hash de Commit: ${env.COMMIT_HASH.take(8)}"
     }
-    
-    echo "✅ APIs Exitosas: ${config.APIS_SUCCESSFUL ?: 'Ninguna'}"
-    echo "❌ APIs Fallidas: ${config.APIS_FAILURE ?: 'Ninguna'}"
-    echo "================================================================================"
+
+    echo "✅ APIs procesadas con éxito: ${config.APIS_SUCCESSFUL ?: 'Ninguna'}"
+    echo "❌ APIs con errores: ${config.APIS_FAILURE ?: 'Ninguna'}"
+    echo "============================================================================="
     echo ""
 
-    // Enviar notificación a Teams
+    // Enviar notificación a Teams 
     wrap([$class: 'BuildUser']) {
         try {
             office365ConnectorSend(
                 status: status,
-                message: "${emoji} ${statusText}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            message: """
+            👋 Buen día ingenieros.  
+
+            Les informamos el estado del proceso de despliegue ejecutado:  
+            ${emoji} Estado: ${statusText}  
+            📌 Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}  
+
+            Agradecemos su atención y quedamos atentos a observaciones o comentarios adicionales.  
+            """,
                 adaptiveCards: true,
                 color: color,
                 factDefinitions: [
-                    [name: "Build triggered by", template: "${env.BUILD_USER_ID}"],
-                    [name: "Environment", template: "${config.ENVIRONMENT}"],
-                    [name: "Commit Author", template: "${env.COMMIT_AUTHOR}"],
-                    [name: "Commit Message", template: "${env.COMMIT_MESSAGE}"],
-                    [name: "Commit Hash", template: "${env.COMMIT_HASH}"],
-                    [name: "Duration", template: durationText],
-                    [name: "APIS_SUCCESSFUL", template: "${config.APIS_SUCCESSFUL}"],
-                    [name: "APIS_FAILURE", template: "${config.APIS_FAILURE}"],
+                    [name: "Usuario ejecutor", template: "${env.BUILD_USER_ID}"],
+                    [name: "Entorno", template: "${config.ENVIRONMENT}"],
+                    [name: "Autor del Commit", template: "${env.COMMIT_AUTHOR}"],
+                    [name: "Mensaje del Commit", template: "${env.COMMIT_MESSAGE}"],
+                    [name: "Hash del Commit", template: "${env.COMMIT_HASH}"],
+                    [name: "Duración", template: durationText],
+                    [name: "APIs Exitosas", template: "${config.APIS_SUCCESSFUL}"],
+                    [name: "APIs con Errores", template: "${config.APIS_FAILURE}"],
                 ]
             )
-            echo "📢 ✅ Notificación enviada exitosamente a Teams"
+            echo "📢 Notificación enviada a Microsoft Teams de manera exitosa."
         } catch (Exception e) {
-            echo "❌ ⚠️  Error enviando notificación a Teams: ${e.message}"
-            echo "📋 Se mostró la información en consola igualmente"
+            echo "⚠️ No fue posible enviar la notificación a Teams: ${e.message}"
+            echo "📋 La información fue presentada en consola."
         }
     }
 
-    // Log final con emoji según estado
-    echo "${logEmoji} ${statusText} - Duración: ${durationText}"
+    // Log final formal
+    echo "${logEmoji} Estado Final: ${statusText} | Duración: ${durationText}"
     echo ""
 }
