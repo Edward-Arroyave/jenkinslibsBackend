@@ -7,89 +7,65 @@ def call(api, configCompleto, config, CONFIGURATION) {
         dotnetSdk : "C:\\Program Files\\dotnet\\sdk\\6.0.428\\Sdks"
     ]
 
-
-
-    stage("Modify file Directory.Build.props")  {
-        echo "🔒 [Stage] Iniciando respaldo y configuración inicial..."
+    // --- Etapas del pipeline ---
+    stage("Backup and Modify Project") {
+        echo "🔒 [Stage] Creando archivo Directory.Build.props..."
         dir("${env.REPO_PATH}") {
-        echo "⚙️ [Config] Creando archivo Directory.Build.props temporal..."
-        writeFile file: "Directory.Build.props", text: """
-        <Project>
-        <PropertyGroup>
-        <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
-        <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
-        <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
-        </PropertyGroup>
-        </Project>
-        """
-        echo "✅ [Config] Archivo Directory.Build.props creado."
-        
+            writeFile file: "Directory.Build.props", text: """
+<Project>
+  <PropertyGroup>
+    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+    <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
+  </PropertyGroup>
+</Project>
+"""
+            echo "✅ [Config] Archivo Directory.Build.props creado."
         }
     }
 
-    stage("Restore and Build") {
-        echo "📦 [Stage] Restaurando paquetes NuGet y compilando ViewModels..."
+    stage("Restore NuGet Packages") {
         dir("${env.REPO_PATH}") {
             bat """
                 echo 📦 [NuGet] Restaurando paquetes...
                 nuget restore "${env.REPO_PATH}\\ApiCrmVitalea.sln" -PackagesDirectory "${env.REPO_PATH}\\packages" -DisableParallelProcessing
-                if %ERRORLEVEL% neq 0 (
-                    echo ❌ [NuGet] Error al restaurar paquetes.
-                    exit /b %ERRORLEVEL%
-                )
-                echo ✅ [NuGet] Paquetes restaurados correctamente.
+                if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
             """
-          
         }
     }
 
     stage("Build ViewModels") {
-            dir("${env.REPO_PATH}\\ViewModels") {
-                bat """
-                    echo 🔧 [Build] Compilando ViewModels.csproj (.NET Standard)...
-                    dotnet build ViewModels.csproj -c Release -p:MSBuildEnableWorkloadResolver=false
-                    if %ERRORLEVEL% neq 0 (
-                        echo ❌ [Build] Error al compilar ViewModels.csproj
-                        exit /b %ERRORLEVEL%
-                    )
-                    echo ✅ [Build] Compilación de ViewModels.csproj completada.
-                """
-            }
-    }
-
-
-    stage("Copy ViewModels.dll") {
         dir("${env.REPO_PATH}\\ViewModels") {
-            
             bat """
-                    echo 📂 [Copy] Copiando ViewModels.dll al proyecto principal...
-                    if not exist "ApiCrmVitalea\\bin\\Release" mkdir "ApiCrmVitalea\\bin\\Release"
-                    copy "ViewModels\\bin\\Release\\netstandard2.0\\ViewModels.dll" "ApiCrmVitalea\\bin\\Release\\" /Y
-                    if %ERRORLEVEL% neq 0 (
-                        echo ❌ [Copy] Error al copiar ViewModels.dll
-                        exit /b %ERRORLEVEL%
-                    )
-                    echo ✅ [Copy] ViewModels.dll copiado correctamente.
-                """
+                echo 🔧 [Build] Compilando ViewModels.csproj...
+                dotnet build ViewModels.csproj -c Release -p:MSBuildEnableWorkloadResolver=false
+                if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+            """
         }
     }
+
+    stage("Copy ViewModels.dll") {
+        dir("${env.REPO_PATH}") {
+            bat """
+                echo 📂 [Copy] Copiando ViewModels.dll...
+                if not exist "ApiCrmVitalea\\bin\\Release" mkdir "ApiCrmVitalea\\bin\\Release"
+                copy "ViewModels\\bin\\Release\\netstandard2.0\\ViewModels.dll" "ApiCrmVitalea\\bin\\Release\\" /Y
+                if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+            """
+        }
+    }
+
     stage("Modify Project References") {
-        echo "📝 [Stage] Modificando referencias en ApiCrmVitalea.csproj..."
         dir("${env.REPO_PATH}\\ApiCrmVitalea") {
             powershell '''
-                Write-Host "🔍 [Refs] Procesando referencias en ApiCrmVitalea.csproj..."
+                Write-Host "📝 [Refs] Procesando ApiCrmVitalea.csproj..."
                 $csprojPath = "ApiCrmVitalea.csproj"
                 $xml = [xml](Get-Content $csprojPath)
                 $ns = New-Object System.Xml.XmlNamespaceManager($xml.NameTable)
                 $ns.AddNamespace("msbuild", "http://schemas.microsoft.com/developer/msbuild/2003")
 
                 $projectReference = $xml.SelectSingleNode("//msbuild:ProjectReference[contains(@Include, 'ViewModels.csproj')]", $ns)
-                if ($projectReference) {
-                    $projectReference.ParentNode.RemoveChild($projectReference)
-                    Write-Host "✅ [Refs] Referencia al proyecto ViewModels.csproj eliminada."
-                } else {
-                    Write-Host "⚠️ [Refs] No se encontró referencia a ViewModels.csproj."
-                }
+                if ($projectReference) { $projectReference.ParentNode.RemoveChild($projectReference) }
 
                 $itemGroup = $xml.CreateElement("ItemGroup", $xml.DocumentElement.NamespaceURI)
                 $reference = $xml.CreateElement("Reference", $xml.DocumentElement.NamespaceURI)
@@ -108,7 +84,6 @@ def call(api, configCompleto, config, CONFIGURATION) {
     }
 
     stage("Deploy ${api}") {
-        echo "🚀 [Stage] Iniciando despliegue de la API ${api}..."
         def apiConfig = [
             CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
         ]
@@ -116,19 +91,10 @@ def call(api, configCompleto, config, CONFIGURATION) {
         dir("${env.REPO_PATH}\\ApiCrmVitalea") {
             withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
                 powershell """
-                    Write-Host "🔑 [Deploy] Cargando credenciales de publicación..."
+                    Write-Host "🚀 [Deploy] Publicando API ${api}..."
                     [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
                     \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
-                    
-                    if (-not \$profile) { Write-Error "❌ [Deploy] Perfil MSDeploy no encontrado"; exit 1 }
 
-                    Write-Host "⚙️ [Deploy] Configurando variables de entorno para MSBuild..."
-                    \$env:MSBuildExtensionsPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild"
-                    \$env:MSBuildSDKsPath = "${paths.dotnetSdk}"
-                    \$env:VSToolsPath = "${paths.vstools}"
-                    \$env:MSBuildEnableWorkloadResolver = "false"
-                    
-                    Write-Host "🚀 [Deploy] Ejecutando MSBuild con MSDeploy..."
                     & "${paths.msbuild}" "ApiCrmVitalea.csproj" `
                         /p:Configuration=${CONFIGURATION} `
                         /p:DeployOnBuild=true `
@@ -146,13 +112,9 @@ def call(api, configCompleto, config, CONFIGURATION) {
                         /maxcpucount `
                         /verbosity:minimal
 
-                    if (\$LASTEXITCODE -ne 0) { Write-Error "❌ [Deploy] Error durante la publicación"; exit 1 }
-                    Write-Host "✅ [Deploy] API publicada exitosamente en \$(\$profile.publishUrl)."
+                    if (\$LASTEXITCODE -ne 0) { Write-Error "❌ [Deploy] Error en publicación"; exit 1 }
                 """
             }
         }
     }
-
-    
 }
-
