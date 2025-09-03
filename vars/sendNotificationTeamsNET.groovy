@@ -72,12 +72,10 @@ def call(Map config) {
                 Les informamos el estado del proceso de despliegue ejecutado:  
                 Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}
                 Agradecemos su atención y quedamos atentos a observaciones o comentarios adicionales.  
+                @Todos
                 """,
                 adaptiveCards: true,
                 color: color,
-                mentions: [
-                    [name: "Edward Arroyave", id: "edward.arroyave@ithealth.co"]
-                ],
                 factDefinitions: [
                     [name: "Usuario ejecutor", template: "${env.BUILD_USER_ID}"],
                     [name: "Entorno", template: "${config.ENVIRONMENT}"],
