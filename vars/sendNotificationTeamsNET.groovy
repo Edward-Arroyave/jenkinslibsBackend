@@ -75,6 +75,9 @@ def call(Map config) {
                 """,
                 adaptiveCards: true,
                 color: color,
+                mentions: [
+                    [name: "Edward Arroyave", id: "edward.arroyave@ithealth.co"]
+                ],
                 factDefinitions: [
                     [name: "Usuario ejecutor", template: "${env.BUILD_USER_ID}"],
                     [name: "Entorno", template: "${config.ENVIRONMENT}"],
