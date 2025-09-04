@@ -70,13 +70,13 @@ def call(Map config) {
                 message: """
                 Buen día ingenieros.  
                 Les informamos el estado del proceso de despliegue ejecutado:  
-                Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}/n
+                Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}.
                 Agradecemos su atención y quedamos atentos a observaciones o comentarios adicionales. 
                 """,
                 adaptiveCards: true,
                 color: color,
                 factDefinitions: [
-                    [name: "Usuario ejecutor", template: "${env.BUILD_USER_NAME}"],
+                    [name: "Usuario ejecutor", template: "${env.BUILD_USER_ID}"],
                     [name: "Entorno", template: "${config.ENVIRONMENT}"],
                     [name: "Autor del Commit", template: "${env.COMMIT_AUTHOR}"],
                     [name: "Mensaje del Commit", template: "${env.COMMIT_MESSAGE}"],
