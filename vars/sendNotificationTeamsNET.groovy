@@ -68,23 +68,24 @@ def call(Map config) {
             message: """
             Buen día ingenieros.  
             Les informamos el estado del proceso de despliegue ejecutado:  
-            Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}   
+            Proceso: **${env.JOB_NAME} #${env.BUILD_NUMBER}**  
             Agradecemos su atención y quedamos atentos a observaciones o comentarios adicionales. 
             """,
             adaptiveCards: true,
             color: color,
             factDefinitions: [
-                [name: "Status", template: "**${statusText} ${emoji}**"],
-                [name: "Usuario ejecutor", template: "_${env.BUILD_USER}_"],
-                [name: "Entorno", template: "**${config.ENVIRONMENT ?: 'No definido'}**"],
-                [name: "Autor del Commit", template: "${env.COMMIT_AUTHOR ?: '-'}"],
-                [name: "Mensaje del Commit", template: "${env.COMMIT_MESSAGE ?: '-'}"],
-                [name: "Hash del Commit", template: "`${env.COMMIT_HASH ?: '-'} `"],
-                [name: "Duración", template: "` ${durationText} `"],
-                [name: "APIs Exitosas", template: "${config.APIS_SUCCESSFUL }"],
-                [name: "APIs con Errores", template: "${config.APIS_FAILURE}"],
+                [name: "📌 Estado Final", template: "**${statusText} ${emoji}**"],
+                [name: "👤 Usuario ejecutor", template: "_${env.BUILD_USER}_"],
+                [name: "🌍 Entorno", template: "**${config.ENVIRONMENT ?: 'No definido'}**"],
+                [name: "👨‍💻 Autor del Commit", template: "${env.COMMIT_AUTHOR ?: '-'}"],
+                [name: "📝 Mensaje del Commit", template: "${env.COMMIT_MESSAGE ?: '-'}"],
+                [name: "🔗 Hash del Commit", template: "`${env.COMMIT_HASH ?: '-'} `"],
+                [name: "⏱️ Duración", template: "` ${durationText} `"],
+                [name: "✅ APIs Exitosas", template: "**${config.APIS_SUCCESSFUL ?: 'Ninguna'}**"],
+                [name: "❌ APIs con Errores", template: "**${config.APIS_FAILURE ?: 'Ninguna'}**"],
             ]
         )
+
 
 
             echo "📢 Notificación enviada a Microsoft Teams de manera exitosa."
