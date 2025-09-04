@@ -3,13 +3,14 @@ def call(String url, String apiName) {
         script {
             writeFile file: 'checkApi.ps1', text: """
                 try {
-                    (Invoke-WebRequest -Uri '${url}' -UseBasicParsing).StatusCode
+                    \$resp = Invoke-WebRequest -Uri '${url}' -UseBasicParsing
+                    Write-Output ('STATUS:' + \$resp.StatusCode)
                 } catch {
-                    Write-Host "❌ Exception.Message: $($_.Exception.Message)"
-                    if ($_.Exception.Response) {
-                        $_.Exception.Response.StatusCode.value__
+                    Write-Output "❌ Exception.Message: $($_.Exception.Message)"
+                    if (\$_.Exception.Response) {
+                        Write-Output ('STATUS:' + \$_.Exception.Response.StatusCode.value__)
                     } else {
-                        0
+                        Write-Output 'STATUS:0'
                     }
                 }
             """
@@ -21,7 +22,12 @@ def call(String url, String apiName) {
 
             echo "📡 Output PowerShell: ${output}"
 
-            def statusCode = output.tokenize().last().toInteger()
+            // Buscar la línea que empieza con STATUS:
+            def statusCode = output.readLines()
+                                   .find { it.startsWith("STATUS:") }
+                                   ?.replace("STATUS:", "")
+                                   ?.trim()
+                                   ?.toInteger() ?: 0
 
             echo "📡 Respuesta de ${apiName}: código ${statusCode}"
 
