@@ -8,7 +8,7 @@ def call(String url, String apiName) {
             """
 
             def statusCode = bat(
-                script: """powershell -Command "
+                script: """powershell -Command "& {
                     try {
                         (Invoke-WebRequest -Uri '${url}' -UseBasicParsing).StatusCode
                     } catch {
@@ -18,7 +18,7 @@ def call(String url, String apiName) {
                             0
                         }
                     }
-                " """,
+                }" """,
                 returnStdout: true
             ).trim().toInteger()
 
@@ -39,7 +39,7 @@ def call(String url, String apiName) {
                     echo "✅ La API ${apiName} está operativa (${statusCode})"
             }
 
-            echo "🏁 Validación finalizada para la API: ${apiName}"
+            echo "Validación finalizada para la API: ${apiName}"
         }
     }
 }
