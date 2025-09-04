@@ -1,9 +1,6 @@
 def call(Map config) {
-
-    // Obtener duración real del build en milisegundos
+    // Obtener duración real del build
     def durationMillis = currentBuild.duration ?: (currentBuild.getTimeInMillis() - currentBuild.getStartTimeInMillis())
-
-    // Convertir a H.M.S
     def totalSeconds = durationMillis / 1000.0
     def hours = Math.floor(totalSeconds / 3600).toInteger()
     def minutes = Math.floor((totalSeconds - (hours * 3600)) / 60).toInteger()
@@ -38,38 +35,38 @@ def call(Map config) {
         }
     }
 
-    // Logs empresariales para Ocean/consola
-    echo ""
-    echo "📊 =========================== REPORTE DE EJECUCIÓN ==========================="
-    echo "📌 Estado del Proceso: ${statusText}"
-    echo "👤 Usuario que ejecutó: ${env.BUILD_USER_ID ?: 'No disponible'}"
-    echo "🌍 Entorno: ${config.ENVIRONMENT ?: 'No definido'}"
-    echo "⏱️ Duración total: ${durationText}"
-    echo "🔢 Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+    // Usar withBuildUser para acceder a las variables del plugin
+    withBuildUser {
+        // Logs empresariales para Ocean/consola
+        echo ""
+        echo "📊 =========================== REPORTE DE EJECUCIÓN ==========================="
+        echo "📌 Estado del Proceso: ${statusText}"
+        echo "👤 Usuario que ejecutó: ${env.BUILD_USER_ID ?: 'No disponible'}"
+        echo "🌍 Entorno: ${config.ENVIRONMENT ?: 'No definido'}"
+        echo "⏱️ Duración total: ${durationText}"
+        echo "🔢 Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
 
-    echo "Full name: ${env.BUILD_USER}"
-    echo "First name: ${env.BUILD_USER_FIRST_NAME}"
-    echo "Last name: ${env.BUILD_USER_LAST_NAME}"
-    echo "User id: ${env.BUILD_USER_ID}"
+        echo "Full name: ${env.BUILD_USER}"
+        echo "First name: ${env.BUILD_USER_FIRST_NAME}"
+        echo "Last name: ${env.BUILD_USER_LAST_NAME}"
+        echo "User id: ${env.BUILD_USER_ID}"
 
+        if (env.COMMIT_AUTHOR) {
+            echo "👨‍💻 Autor del Commit: ${env.COMMIT_AUTHOR}"
+        }
+        if (env.COMMIT_MESSAGE) {
+            echo "📝 Mensaje del Commit: ${env.COMMIT_MESSAGE.take(80)}${env.COMMIT_MESSAGE.length() > 80 ? '...' : ''}"
+        }
+        if (env.COMMIT_HASH) {
+            echo "🔗 Hash de Commit: ${env.COMMIT_HASH.take(8)}"
+        }
 
-    if (env.COMMIT_AUTHOR) {
-        echo "👨‍💻 Autor del Commit: ${env.COMMIT_AUTHOR}"
-    }
-    if (env.COMMIT_MESSAGE) {
-        echo "📝 Mensaje del Commit: ${env.COMMIT_MESSAGE.take(80)}${env.COMMIT_MESSAGE.length() > 80 ? '...' : ''}"
-    }
-    if (env.COMMIT_HASH) {
-        echo "🔗 Hash de Commit: ${env.COMMIT_HASH.take(8)}"
-    }
+        echo "✅ APIs procesadas con éxito: ${config.APIS_SUCCESSFUL ?: 'Ninguna'}"
+        echo "❌ APIs con errores: ${config.APIS_FAILURE ?: 'Ninguna'}"
+        echo "============================================================================="
+        echo ""
 
-    echo "✅ APIs procesadas con éxito: ${config.APIS_SUCCESSFUL ?: 'Ninguna'}"
-    echo "❌ APIs con errores: ${config.APIS_FAILURE ?: 'Ninguna'}"
-    echo "============================================================================="
-    echo ""
-
-    // Enviar notificación a Teams 
-    wrap([$class: 'BuildUser']) {
+        // Enviar notificación a Teams
         try {
             office365ConnectorSend(
                 status: status,
@@ -82,14 +79,15 @@ def call(Map config) {
                 adaptiveCards: true,
                 color: color,
                 factDefinitions: [
-                    [name: "Usuario ejecutor", template: "${env.BUILD_USER_ID}"],
-                    [name: "Entorno", template: "${config.ENVIRONMENT}"],
-                    [name: "Autor del Commit", template: "${env.COMMIT_AUTHOR}"],
-                    [name: "Mensaje del Commit", template: "${env.COMMIT_MESSAGE}"],
-                    [name: "Hash del Commit", template: "${env.COMMIT_HASH}"],
-                    [name: "Duración", template: durationText],
-                    [name: "APIs Exitosas", template: "${config.APIS_SUCCESSFUL}"],
-                    [name: "APIs con Errores", template: "${config.APIS_FAILURE}"],
+                    [name: "Status", value: statusText],
+                    [name: "Usuario ejecutor", value: env.BUILD_USER_ID ?: 'No disponible'],
+                    [name: "Entorno", value: config.ENVIRONMENT],
+                    [name: "Autor del Commit", value: env.COMMIT_AUTHOR ?: 'No disponible'],
+                    [name: "Mensaje del Commit", value: env.COMMIT_MESSAGE ?: 'No disponible'],
+                    [name: "Hash del Commit", value: env.COMMIT_HASH ?: 'No disponible'],
+                    [name: "Duración", value: durationText],
+                    [name: "APIs Exitosas", value: config.APIS_SUCCESSFUL ?: 'Ninguna'],
+                    [name: "APIs con Errores", value: config.APIS_FAILURE ?: 'Ninguna'],
                 ]
             )
             echo "📢 Notificación enviada a Microsoft Teams de manera exitosa."
@@ -97,9 +95,9 @@ def call(Map config) {
             echo "⚠️ No fue posible enviar la notificación a Teams: ${e.message}"
             echo "📋 La información fue presentada en consola."
         }
-    }
 
-    // Log final formal
-    echo "${logEmoji} Estado Final: ${statusText} | Duración: ${durationText}"
-    echo ""
+        // Log final formal
+        echo "${logEmoji} Estado Final: ${statusText} | Duración: ${durationText}"
+        echo ""
+    }
 }
