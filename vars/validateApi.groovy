@@ -7,20 +7,31 @@ def call(String url, String apiName) {
             📤 Enviando petición HTTP...
             """
 
-            def statusCode = bat(
-                script: """powershell -Command "& {
+            // Ejecutamos PowerShell y siempre devolvemos "STATUS:<codigo>"
+            def rawOutput = bat(
+                script: """powershell -ExecutionPolicy Bypass -Command "& {
                     try {
-                        (Invoke-WebRequest -Uri '${url}' -UseBasicParsing).StatusCode
+                        \$resp = Invoke-WebRequest -Uri '${url}' -UseBasicParsing
+                        Write-Output ('STATUS:' + \$resp.StatusCode)
                     } catch {
-                        if (\$_ -and \$_ .Exception.Response) {
-                            \$_ .Exception.Response.StatusCode.value__
+                        if (\$_ -and \$_.Exception.Response) {
+                            Write-Output ('STATUS:' + \$_.Exception.Response.StatusCode.value__)
                         } else {
-                            0
+                            Write-Output 'STATUS:0'
                         }
                     }
                 }" """,
                 returnStdout: true
-            ).trim().toInteger()
+            ).trim()
+
+            echo "📡 Output PowerShell: ${rawOutput}"
+
+            // Extraer solo el número después de "STATUS:"
+            def statusCode = rawOutput.readLines()
+                                      .find { it.startsWith("STATUS:") }
+                                      ?.replace("STATUS:", "")
+                                      ?.trim()
+                                      ?.toInteger() ?: 0
 
             echo "📡 Respuesta de ${apiName}: código ${statusCode}"
             echo "🔎 Analizando código de estado..."
@@ -39,7 +50,7 @@ def call(String url, String apiName) {
                     echo "✅ La API ${apiName} está operativa (${statusCode})"
             }
 
-            echo "Validación finalizada para la API: ${apiName}"
+            echo "✅ Validación finalizada para la API: ${apiName}"
         }
     }
 }
