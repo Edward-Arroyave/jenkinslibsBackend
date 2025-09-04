@@ -47,6 +47,12 @@ def call(Map config) {
     echo "⏱️ Duración total: ${durationText}"
     echo "🔢 Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
 
+    echo "Full name: $BUILD_USER"
+    echo "First name: $BUILD_USER_FIRST_NAME"
+    echo "Last name: $BUILD_USER_LAST_NAME"
+    echo "User id: $BUILD_USER_ID"
+
+
     if (env.COMMIT_AUTHOR) {
         echo "👨‍💻 Autor del Commit: ${env.COMMIT_AUTHOR}"
     }
