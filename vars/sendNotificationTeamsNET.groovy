@@ -63,28 +63,30 @@ def call(Map config) {
 
         // Enviar notificación a Teams
         try {
-            office365ConnectorSend(
-                status: status,
-                message: """
-                Buen día ingenieros.  
-                Les informamos el estado del proceso de despliegue ejecutado:  
-                Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}   
-                Agradecemos su atención y quedamos atentos a observaciones o comentarios adicionales. 
-                """,
-                adaptiveCards: true,
-                color: color,
-                factDefinitions: [
-                    [name: "Status", template: statusText],
-                    [name: "Usuario ejecutor", template: env.BUILD_USER ],
-                    [name: "Entorno", template: config.ENVIRONMENT],
-                    [name: "Autor del Commit", template: env.COMMIT_AUTHOR ],
-                    [name: "Mensaje del Commit", template: env.COMMIT_MESSAGE ],
-                    [name: "Hash del Commit", template: env.COMMIT_HASH ],
-                    [name: "Duración", template: durationText],
-                    [name: "APIs Exitosas", template: config.APIS_SUCCESSFUL ],
-                    [name: "APIs con Errores", template: config.APIS_FAILURE ],
-                ]
-            )
+         office365ConnectorSend(
+            status: status,
+            message: """
+            Buen día ingenieros.  
+            Les informamos el estado del proceso de despliegue ejecutado:  
+            Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}   
+            Agradecemos su atención y quedamos atentos a observaciones o comentarios adicionales. 
+            """,
+            adaptiveCards: true,
+            color: color,
+            factDefinitions: [
+                [name: "Status", template: "**${statusText} ${emoji}**"],
+                [name: "Usuario ejecutor", template: "_${env.BUILD_USER}_"],
+                [name: "Entorno", template: "**${config.ENVIRONMENT ?: 'No definido'}**"],
+                [name: "Autor del Commit", template: "${env.COMMIT_AUTHOR ?: '-'}"],
+                [name: "Mensaje del Commit", template: "${env.COMMIT_MESSAGE ?: '-'}"],
+                [name: "Hash del Commit", template: "`${env.COMMIT_HASH ?: '-'} `"],
+                [name: "Duración", template: "` ${durationText} `"],
+                [name: "APIs Exitosas", template: "✅ ${config.APIS_SUCCESSFUL ?: 'Ninguna'}"],
+                [name: "APIs con Errores", template: "❌ ${config.APIS_FAILURE ?: 'Ninguna'}"],
+            ]
+        )
+
+
             echo "📢 Notificación enviada a Microsoft Teams de manera exitosa."
         } catch (Exception e) {
             echo "⚠️ No fue posible enviar la notificación a Teams: ${e.message}"
