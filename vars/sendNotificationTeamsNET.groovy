@@ -70,7 +70,7 @@ def call(Map config) {
                 message: """
                 Buen día ingenieros.  
                 Les informamos el estado del proceso de despliegue ejecutado:  
-                Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}
+                Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}/n
                 Agradecemos su atención y quedamos atentos a observaciones o comentarios adicionales. 
                 """,
                 adaptiveCards: true,
