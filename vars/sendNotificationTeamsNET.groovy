@@ -76,7 +76,7 @@ def call(Map config) {
                 adaptiveCards: true,
                 color: color,
                 factDefinitions: [
-                    [name: "Usuario ejecutor", template: "${env.BUILD_USER_NAME ?: 'No disponible'}"],
+                    [name: "Usuario ejecutor", template: "${env.BUILD_USER}"],
                     [name: "Entorno", template: "${config.ENVIRONMENT}"],
                     [name: "Autor del Commit", template: "${env.COMMIT_AUTHOR}"],
                     [name: "Mensaje del Commit", template: "${env.COMMIT_MESSAGE}"],
