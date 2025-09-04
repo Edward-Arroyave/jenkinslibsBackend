@@ -12,25 +12,15 @@ def call(api, configCompleto, config, CONFIGURATION) {
         echo "🔒 [Stage] Creando archivo Directory.Build.props..."
         dir("${env.REPO_PATH}") {
             writeFile file: "Directory.Build.props", text: """
-<Project>
-  <PropertyGroup>
-    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
-    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
-    <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
-  </PropertyGroup>
-</Project>
-"""
-            echo "✅ [Config] Archivo Directory.Build.props creado."
-        }
-    }
-
-    stage("Restore NuGet Packages") {
-        dir("${env.REPO_PATH}") {
-            bat """
-                echo 📦 [NuGet] Restaurando paquetes...
-                nuget restore "${env.REPO_PATH}\\ApiCrmVitalea.sln" -PackagesDirectory "${env.REPO_PATH}\\packages" -DisableParallelProcessing
-                if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+            <Project>
+            <PropertyGroup>
+                <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+                <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+                <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
+            </PropertyGroup>
+            </Project>
             """
+            echo "✅ [Config] Archivo Directory.Build.props creado."
         }
     }
 
