@@ -24,6 +24,16 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
+    stage("Restore NuGet Packages") {
+        dir("${env.REPO_PATH}") {
+            bat """
+                echo 📦 [NuGet] Restaurando paquetes...
+                nuget restore "${env.REPO_PATH}\\ApiCrmVitalea.sln" -PackagesDirectory "${env.REPO_PATH}\\packages" -DisableParallelProcessing
+                if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+            """
+        }
+    }
+
     stage("Build ViewModels") {
         dir("${env.REPO_PATH}\\ViewModels") {
             bat """
