@@ -77,8 +77,8 @@ def call(Map config) {
                                         deployDotNet(api, configCompleto, config, CONFIGURATION)
                                     }
                                 }
-                                def url = configCompleto.APIS[api].URL[config.AMBIENTE]
-                            
+
+                                apisExitosas << api
                                 echo "🎉 DESPLIEGUE EXITOSO: ${api}"
 
                             } catch (err) {
