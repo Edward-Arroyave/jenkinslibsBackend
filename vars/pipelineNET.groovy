@@ -77,7 +77,7 @@ def call(Map config) {
                                         deployDotNet(api, configCompleto, config, CONFIGURATION)
                                     }
                                 }
-                                def url = configCompleto.APIS[api].URLS[config.AMBIENTE]
+                                def url = configCompleto.APIS[api].URL[config.AMBIENTE]
                                 validateApi(url, api)
                                 apisExitosas << api
                                 echo "🎉 DESPLIEGUE EXITOSO: ${api}"
