@@ -81,8 +81,8 @@ def call(Map config) {
                 [name: "Mensaje del Commit", template: "${env.COMMIT_MESSAGE ?: '-'}"],
                 [name: "Hash del Commit", template: "`${env.COMMIT_HASH ?: '-'} `"],
                 [name: "Duración", template: "` ${durationText} `"],
-                [name: "APIs Exitosas", template: "✅ ${config.APIS_SUCCESSFUL ?: 'Ninguna'}"],
-                [name: "APIs con Errores", template: "❌ ${config.APIS_FAILURE ?: 'Ninguna'}"],
+                [name: "APIs Exitosas", template: "${config.APIS_SUCCESSFUL }"],
+                [name: "APIs con Errores", template: "${config.APIS_FAILURE ?}"],
             ]
         )
 
