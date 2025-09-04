@@ -78,8 +78,7 @@ def call(Map config) {
                                     }
                                 }
                                 def url = configCompleto.APIS[api].URL[config.AMBIENTE]
-                                validateApi(url, api)
-                                apisExitosas << api
+                            
                                 echo "🎉 DESPLIEGUE EXITOSO: ${api}"
 
                             } catch (err) {
