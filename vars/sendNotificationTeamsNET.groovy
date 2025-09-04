@@ -41,15 +41,10 @@ def call(Map config) {
         echo ""
         echo "📊 =========================== REPORTE DE EJECUCIÓN ==========================="
         echo "📌 Estado del Proceso: ${statusText}"
-        echo "👤 Usuario que ejecutó: ${env.BUILD_USER_ID ?: 'No disponible'}"
+        echo "👤 Usuario que ejecutó: ${env.BUILD_USER_ID}"
         echo "🌍 Entorno: ${config.ENVIRONMENT ?: 'No definido'}"
         echo "⏱️ Duración total: ${durationText}"
         echo "🔢 Proceso: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-
-        echo "Full name: ${env.BUILD_USER}"
-        echo "First name: ${env.BUILD_USER_FIRST_NAME}"
-        echo "Last name: ${env.BUILD_USER_LAST_NAME}"
-        echo "User id: ${env.BUILD_USER_ID}"
 
         if (env.COMMIT_AUTHOR) {
             echo "👨‍💻 Autor del Commit: ${env.COMMIT_AUTHOR}"
@@ -80,14 +75,14 @@ def call(Map config) {
                 color: color,
                 factDefinitions: [
                     [name: "Status", template: statusText],
-                    [name: "Usuario ejecutor", template: env.BUILD_USER_ID ?: 'No disponible'],
+                    [name: "Usuario ejecutor", template: env.BUILD_USER ],
                     [name: "Entorno", template: config.ENVIRONMENT],
-                    [name: "Autor del Commit", template: env.COMMIT_AUTHOR ?: 'No disponible'],
-                    [name: "Mensaje del Commit", template: env.COMMIT_MESSAGE ?: 'No disponible'],
-                    [name: "Hash del Commit", template: env.COMMIT_HASH ?: 'No disponible'],
+                    [name: "Autor del Commit", template: env.COMMIT_AUTHOR ],
+                    [name: "Mensaje del Commit", template: env.COMMIT_MESSAGE ],
+                    [name: "Hash del Commit", template: env.COMMIT_HASH ],
                     [name: "Duración", template: durationText],
-                    [name: "APIs Exitosas", template: config.APIS_SUCCESSFUL ?: 'Ninguna'],
-                    [name: "APIs con Errores", template: config.APIS_FAILURE ?: 'Ninguna'],
+                    [name: "APIs Exitosas", template: config.APIS_SUCCESSFUL ],
+                    [name: "APIs con Errores", template: config.APIS_FAILURE ],
                 ]
             )
             echo "📢 Notificación enviada a Microsoft Teams de manera exitosa."
