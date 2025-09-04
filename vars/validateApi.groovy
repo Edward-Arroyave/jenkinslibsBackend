@@ -1,20 +1,31 @@
 def call(String url, String apiName) {
-    stage("🔎 Validar ${apiName}") {
-        echo "🌐 Validando API: ${apiName} en ${url}"
+    stage("🔎 Validar API ${apiName}") {
+        script {
+            echo "🚀 Iniciando validación de la API: ${apiName}"
+            echo "🌍 URL objetivo: ${url}"
 
-        def response = httpRequest(
-            url: url,
-            validResponseCodes: '100:599', // aceptamos todos, para analizarlos manualmente
-            consoleLogResponseBody: true,
-            timeout: 20
-        )
+            echo "📤 Enviando petición HTTP..."
+            def statusCode = bat(
+                script: """powershell -Command "(Invoke-WebRequest -Uri '${url}' -UseBasicParsing).StatusCode" """,
+                returnStdout: true
+            ).trim()
 
-        echo "📡 Respuesta de ${apiName}: código ${response.status}"
+            echo "📥 Petición finalizada."
+            echo "📡 Respuesta recibida de ${apiName}: código ${statusCode}"
 
-        if (response.status >= 500 && response.status <= 599) {
-            error("❌ La API ${apiName} devolvió un error de servidor (código ${response.status})")
-        } else {
-            echo "✅ La API ${apiName} está operativa (código ${response.status})"
+            int code = statusCode.toInteger()
+
+            echo "🔎 Analizando código de estado..."
+
+            if (code >= 500 && code <= 599) {
+                error("❌ La API ${apiName} devolvió un error de servidor (${code})")
+            } else if (code >= 400 && code <= 499) {
+                echo "⚠️ La API ${apiName} devolvió un error de cliente (${code}), no se considera error de despliegue"
+            } else {
+                echo "✅ La API ${apiName} está operativa (${code})"
+            }
+
+            echo "🏁 Validación finalizada para la API: ${apiName}"
         }
     }
 }
