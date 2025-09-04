@@ -3,14 +3,18 @@ def call(String url, String apiName) {
 
     def response = httpRequest(
         url: url,
-        validResponseCodes: '100:399',
+        validResponseCodes: '100:599', // aceptamos todos, para analizarlos manualmente
         consoleLogResponseBody: true,
         timeout: 20
     )
 
-    if (response.status >= 400) {
-        error("❌ La API ${apiName} respondió con código ${response.status}")
-    }
+    echo "📡 Respuesta de ${apiName}: código ${response.status}"
 
-    echo "✅ La API ${apiName} está saludable (código ${response.status})"
+    if (response.status >= 500 && response.status <= 599) {
+        error("❌ La API ${apiName} devolvió un error de servidor (código ${response.status})")
+    } else if (response.status >= 400 && response.status <= 499) {
+        echo "⚠️ La API ${apiName} devolvió un error de cliente (código ${response.status}), no se considera error de despliegue"
+    } else {
+        echo "✅ La API ${apiName} está operativa (código ${response.status})"
+    }
 }
