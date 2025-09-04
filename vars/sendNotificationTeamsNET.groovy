@@ -79,15 +79,15 @@ def call(Map config) {
                 adaptiveCards: true,
                 color: color,
                 factDefinitions: [
-                    [name: "Status", value: statusText],
-                    [name: "Usuario ejecutor", value: env.BUILD_USER_ID ?: 'No disponible'],
-                    [name: "Entorno", value: config.ENVIRONMENT],
-                    [name: "Autor del Commit", value: env.COMMIT_AUTHOR ?: 'No disponible'],
-                    [name: "Mensaje del Commit", value: env.COMMIT_MESSAGE ?: 'No disponible'],
-                    [name: "Hash del Commit", value: env.COMMIT_HASH ?: 'No disponible'],
-                    [name: "Duración", value: durationText],
-                    [name: "APIs Exitosas", value: config.APIS_SUCCESSFUL ?: 'Ninguna'],
-                    [name: "APIs con Errores", value: config.APIS_FAILURE ?: 'Ninguna'],
+                    [name: "Status", template: statusText],
+                    [name: "Usuario ejecutor", template: env.BUILD_USER_ID ?: 'No disponible'],
+                    [name: "Entorno", template: config.ENVIRONMENT],
+                    [name: "Autor del Commit", template: env.COMMIT_AUTHOR ?: 'No disponible'],
+                    [name: "Mensaje del Commit", template: env.COMMIT_MESSAGE ?: 'No disponible'],
+                    [name: "Hash del Commit", template: env.COMMIT_HASH ?: 'No disponible'],
+                    [name: "Duración", template: durationText],
+                    [name: "APIs Exitosas", template: config.APIS_SUCCESSFUL ?: 'Ninguna'],
+                    [name: "APIs con Errores", template: config.APIS_FAILURE ?: 'Ninguna'],
                 ]
             )
             echo "📢 Notificación enviada a Microsoft Teams de manera exitosa."
