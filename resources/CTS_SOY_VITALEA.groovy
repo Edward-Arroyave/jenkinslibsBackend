@@ -25,7 +25,7 @@ return [
         ApiCrmVitalea: [
             REPO_PATH: "${env.REPO_PATH}/ApiCrmVitalea",
             CREDENCIALES: [
-                Test: "PROFILE_CTS_VIOLETA_ApiCrmVitalea_TEST",
+                Test: "PROFILE_CTS_VITALEA_ApiCrmVitalea_TEST",
                 Pre_Produccion: ""
             ],
             URL: [
