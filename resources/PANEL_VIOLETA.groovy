@@ -5,7 +5,7 @@ return [
     ],
 
     APIS: [
-        PanelResultados: [
+        PanelResultadosVioleta: [
             REPO_PATH: "${env.REPO_PATH}/PanelResultados",
             CREDENCIALES: [
                 Test: "PROFILE_PANEL_VIOLETA_PanelResultados_TEST",
