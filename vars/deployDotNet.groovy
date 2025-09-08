@@ -34,7 +34,7 @@ def call (api, configCompleto, config, CONFIGURATION) {
                     \$user = \$profile.userName
                     \$pass = \$profile.userPWD
 
-                    \$projectFile = (Get-ChildItem -Filter "*.csproj").FullName
+                    \$projectFile = (Get-ChildItem -Filter "${api}.csproj").FullName
 
                     Write-Host "🚀 Publicando: \$projectFile"
 
