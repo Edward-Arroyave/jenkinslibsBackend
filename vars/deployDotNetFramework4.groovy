@@ -83,87 +83,98 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
-stage("Deploy ${api}") {
-    def apiConfig = [
-        CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
-    ]
+    stage("Deploy ${api}") {
+        def apiConfig = [
+            CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
+        ]
 
-    echo "🔑 Usando credenciales ID: ${apiConfig.CREDENTIALS_ID}"
+        echo "🔑 Usando credenciales ID: ${apiConfig.CREDENTIALS_ID}"
 
-    dir("${env.REPO_PATH}\\ApiCrmVitalea") {
-        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
-            powershell """
-                Write-Host "🚀 [Deploy] Publicando API ${api}..."
-                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+        dir("${env.REPO_PATH}\\ApiCrmVitalea") {
+            withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+                powershell """
+                    Write-Host "🚀 [Deploy] Publicando API ${api}..."
+                    [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                    \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
 
-                if (!\$profile) {
-                    Write-Error "❌ No se encontró perfil de publicación MSDeploy"
-                    exit 1
-                }
+                    if (!\$profile) {
+                        Write-Error "❌ No se encontró perfil de publicación MSDeploy"
+                        exit 1
+                    }
 
-                Write-Host "📋 Información del perfil de publicación:"
-                Write-Host " - URL: \$(\$profile.publishUrl)"
-                Write-Host " - Sitio: \$(\$profile.msdeploySite)"
-                Write-Host " - Usuario: \$(\$profile.userName)"
+                    Write-Host "📋 Información del perfil de publicación:"
+                    Write-Host " - URL: \$(\$profile.publishUrl)"
+                    Write-Host " - Sitio: \$(\$profile.msdeploySite)"
+                    Write-Host " - Usuario: \$(\$profile.userName)"
 
-                # Crear archivo .pubxml temporal con formato correcto
-                \$pubxmlContent = @'
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <WebPublishMethod>MSDeploy</WebPublishMethod>
-    <PublishProvider>AzureWebSite</PublishProvider>
-    <LastUsedBuildConfiguration>Release</LastUsedBuildConfiguration>
-    <LastUsedPlatform>Any CPU</LastUsedPlatform>
-    <SiteUrlToLaunchAfterPublish>https://\$(\$profile.msdeploySite)</SiteUrlToLaunchAfterPublish>
-    <LaunchSiteAfterPublish>True</LaunchSiteAfterPublish>
-    <ExcludeApp_Data>False</ExcludeApp_Data>
-    <MSDeployServiceURL>https://\$(\$profile.publishUrl)/msdeploy.axd</MSDeployServiceURL>
-    <DeployIisAppPath>\$(\$profile.msdeploySite)</DeployIisAppPath>
-    <RemoteSitePhysicalPath />
-    <SkipExtraFilesOnServer>True</SkipExtraFilesOnServer>
-    <MSDeployPublishMethod>WMSVC</MSDeployPublishMethod>
-    <EnableMSDeployBackup>True</EnableMSDeployBackup>
-    <UserName>\$(\$profile.userName)</UserName>
-    <Password>\$(\$profile.userPWD)</Password>
-    <AllowUntrustedCertificate>true</AllowUntrustedCertificate>
-  </PropertyGroup>
-</Project>
-'@
+                    # Crear archivo .pubxml temporal con formato correcto
+                    \$pubxmlContent = @"
+    <?xml version="1.0" encoding="utf-8"?>
+    <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <WebPublishMethod>MSDeploy</WebPublishMethod>
+        <PublishProvider>AzureWebSite</PublishProvider>
+        <LastUsedBuildConfiguration>Release</LastUsedBuildConfiguration>
+        <LastUsedPlatform>Any CPU</LastUsedPlatform>
+        <SiteUrlToLaunchAfterPublish>https://\$(\$profile.msdeploySite)</SiteUrlToLaunchAfterPublish>
+        <LaunchSiteAfterPublish>True</LaunchSiteAfterPublish>
+        <ExcludeApp_Data>False</ExcludeApp_Data>
+        <MSDeployServiceURL>https://\$(\$profile.publishUrl)/msdeploy.axd</MSDeployServiceURL>
+        <DeployIisAppPath>\$(\$profile.msdeploySite)</DeployIisAppPath>
+        <RemoteSitePhysicalPath />
+        <SkipExtraFilesOnServer>True</SkipExtraFilesOnServer>
+        <MSDeployPublishMethod>WMSVC</MSDeployPublishMethod>
+        <EnableMSDeployBackup>True</EnableMSDeployBackup>
+        <UserName>\$(\$profile.userName)</UserName>
+        <Password>\$(\$profile.userPWD)</Password>
+        <AllowUntrustedCertificate>true</AllowUntrustedCertificate>
+    </PropertyGroup>
+    </Project>
+    "@
 
-                # Usar una ruta absoluta dentro del directorio actual
-                \$pubxmlPath = "AzurePubXml.pubxml"
-                Set-Content -Path \$pubxmlPath -Value \$pubxmlContent
+                    # Usar una ruta absoluta válida en Windows
+                    \$pubxmlPath = "\$pwd\\AzurePubXml.pubxml"
+                    Set-Content -Path \$pubxmlPath -Value \$pubxmlContent
 
-                Write-Host "📄 Archivo .pubxml temporal creado en: \$((Get-Item \$pubxmlPath).FullName)"
+                    Write-Host "📄 Archivo .pubxml temporal creado en: \$pubxmlPath"
 
-                # Ejecutar MSBuild con el archivo .pubxml
-                & "${paths.msbuild}" "ApiCrmVitalea.csproj" `
-                    /t:Build,Publish `
-                    /p:Configuration=${CONFIGURATION} `
-                    /p:DeployOnBuild=true `
-                    /p:PublishProfile="\$pubxmlPath" `
-                    /p:VisualStudioVersion=17.0 `
-                    /p:VSToolsPath="${paths.vstools}" `
-                    /p:BuildProjectReferences=false `
-                    /p:SkipResolveProjectReferences=true `
-                    /p:TargetFrameworkVersion=v4.7.2 `
-                    /p:DeleteExistingFiles=True `
-                    /maxcpucount `
-                    /verbosity:detailed
+                    # Verificar que el archivo existe
+                    Write-Host "🔍 Verificando existencia del archivo .pubxml..."
+                    if (Test-Path \$pubxmlPath) {
+                        Write-Host "✅ Archivo .pubxml encontrado en: \$pubxmlPath"
+                        Write-Host "📄 Contenido del archivo:"
+                        Get-Content \$pubxmlPath
+                    } else {
+                        Write-Error "❌ Archivo .pubxml no encontrado en: \$pubxmlPath"
+                        exit 1
+                    }
 
-                if (\$LASTEXITCODE -ne 0) { 
-                    Write-Error "❌ Error en publicación"; 
-                    exit 1 
-                }
+                    # Ejecutar MSBuild con el archivo .pubxml
+                    & "${paths.msbuild}" "ApiCrmVitalea.csproj" `
+                        /t:Build,Publish `
+                        /p:Configuration=${CONFIGURATION} `
+                        /p:DeployOnBuild=true `
+                        /p:PublishProfile="\$pubxmlPath" `
+                        /p:VisualStudioVersion=17.0 `
+                        /p:VSToolsPath="${paths.vstools}" `
+                        /p:BuildProjectReferences=false `
+                        /p:SkipResolveProjectReferences=true `
+                        /p:TargetFrameworkVersion=v4.7.2 `
+                        /p:DeleteExistingFiles=True `
+                        /maxcpucount `
+                        /verbosity:detailed
 
-                Write-Host "✅ Publicación completada exitosamente"
+                    if (\$LASTEXITCODE -ne 0) { 
+                        Write-Error "❌ Error en publicación"; 
+                        exit 1 
+                    }
 
-                # Limpiar archivo temporal
-                Remove-Item \$pubxmlPath -Force
-            """
+                    Write-Host "✅ Publicación completada exitosamente"
+
+                    # Limpiar archivo temporal
+                    Remove-Item \$pubxmlPath -Force
+                """
+            }
         }
     }
-}
 }
