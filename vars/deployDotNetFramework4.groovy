@@ -107,8 +107,9 @@ def call(api, configCompleto, config, CONFIGURATION) {
                 Write-Host " - Sitio: \$(\$profile.msdeploySite)"
                 Write-Host " - Usuario: \$(\$profile.userName)"
 
-                # Ejecutar MSBuild con parámetros corregidos
+                # Ejecutar MSBuild con target Publish explícito
                 & "${paths.msbuild}" "ApiCrmVitalea.csproj" `
+                    /t:Build,Publish `
                     /p:Configuration=${CONFIGURATION} `
                     /p:DeployOnBuild=true `
                     /p:PublishProfile="\$env:PUBLISH_SETTINGS" `
@@ -125,7 +126,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     /p:TargetFrameworkVersion=v4.7.2 `
                     /p:DeleteExistingFiles=True `
                     /maxcpucount `
-                    /verbosity:detailed
+                    /verbosity:diagnostic
 
                 if (\$LASTEXITCODE -ne 0) { 
                     Write-Error "❌ Error en publicación"; 
@@ -134,8 +135,8 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
                 Write-Host "✅ Publicación completada exitosamente"
 
-                # Verificación adicional - listar archivos publicados
-                Write-Host "📁 Contenido del directorio de publicación:"
+                # Verificación adicional
+                Write-Host "📁 Verificando archivos publicados..."
                 Get-ChildItem "obj\\Release\\Package\\PackageTmp" -Recurse | Select-Object Name, Length | Format-Table -AutoSize
             """
         }
