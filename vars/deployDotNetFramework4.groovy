@@ -84,66 +84,61 @@ def call(api, configCompleto, config, CONFIGURATION) {
     }
 
     stage("Deploy ${api}") {
-        // Validar existencia de configuración para la API
-        if (!configCompleto.APIS[api]) {
-            error "❌ No se encontró configuración para la API: ${api}"
-        }
-        
-        // Validar existencia de credenciales para el ambiente
-        def credenciales = configCompleto.APIS[api].CREDENCIALES
-        if (!credenciales) {
-            error "❌ No se encontraron credenciales configuradas para la API: ${api}"
-        }
-        
-        def credencialesId = credenciales[config.AMBIENTE]
-        if (!credencialesId) {
-            error "❌ No se encontraron credenciales para el ambiente ${config.AMBIENTE} en la API: ${api}"
-        }
-        
-        echo "🔑 Usando credenciales ID: ${credencialesId}"
-        
-        dir("${env.REPO_PATH}\\ApiCrmVitalea") {
-            withCredentials([file(credentialsId: credencialesId, variable: 'PUBLISH_SETTINGS')]) {
-                powershell """
-                    Write-Host "🚀 [Deploy] Publicando API ${api}..."
-                    [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
-                    \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
-                    
-                    # Validar perfil de publicación
-                    if (!\$profile) {
-                        Write-Error "❌ No se encontró perfil de publicación MSDeploy en el archivo de configuración"
-                        exit 1
-                    }
-                    
-                    Write-Host "📋 Información del perfil de publicación:"
-                    Write-Host " - URL: \$(\$profile.publishUrl)"
-                    Write-Host " - Sitio: \$(\$profile.msdeploySite)"
-                    Write-Host " - Usuario: \$(\$profile.userName)"
-                    
-                    # Ejecutar MSBuild
-                    & "${paths.msbuild}" "ApiCrmVitalea.csproj" `
-                        /p:Configuration=${CONFIGURATION} `
-                        /p:DeployOnBuild=true `
-                        /p:WebPublishMethod=MSDeploy `
-                        /p:MsDeployServiceUrl="https://\$(\$profile.publishUrl)/msdeploy.axd" `
-                        /p:DeployIisAppPath="\$(\$profile.msdeploySite)" `
-                        /p:Username="\$(\$profile.userName)" `
-                        /p:Password="\$(\$profile.userPWD)" `
-                        /p:AllowUntrustedCertificate=true `
-                        /p:VisualStudioVersion=17.0 `
-                        /p:VSToolsPath="${paths.vstools}" `
-                        /p:BuildProjectReferences=false `
-                        /p:SkipResolveProjectReferences=true `
-                        /p:TargetFrameworkVersion=v4.7.2 `
-                        /maxcpucount `
-                        /verbosity:minimal
+    def apiConfig = [
+        CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
+    ]
 
-                    if (\$LASTEXITCODE -ne 0) { 
-                        Write-Error "❌ Error en publicación"; 
-                        exit 1 
-                    }
-                """
-            }
+    echo "🔑 Usando credenciales ID: ${apiConfig.CREDENTIALS_ID}"
+
+    dir("${env.REPO_PATH}\\ApiCrmVitalea") {
+        withCredentials([file(credentialsId: apiConfig.CREDENTIALS_ID, variable: 'PUBLISH_SETTINGS')]) {
+            powershell """
+                Write-Host "🚀 [Deploy] Publicando API ${api}..."
+                [xml]\$pub = Get-Content "\$env:PUBLISH_SETTINGS"
+                \$profile = \$pub.publishData.publishProfile | Where-Object { \$_.publishMethod -eq "MSDeploy" }
+
+                if (!\$profile) {
+                    Write-Error "❌ No se encontró perfil de publicación MSDeploy"
+                    exit 1
+                }
+
+                Write-Host "📋 Información del perfil de publicación:"
+                Write-Host " - URL: \$(\$profile.publishUrl)"
+                Write-Host " - Sitio: \$(\$profile.msdeploySite)"
+                Write-Host " - Usuario: \$(\$profile.userName)"
+
+                # Ejecutar MSBuild con parámetros corregidos
+                & "${paths.msbuild}" "ApiCrmVitalea.csproj" `
+                    /p:Configuration=${CONFIGURATION} `
+                    /p:DeployOnBuild=true `
+                    /p:PublishProfile="\$env:PUBLISH_SETTINGS" `
+                    /p:WebPublishMethod=MSDeploy `
+                    /p:MsDeployServiceUrl="https://\$(\$profile.publishUrl)/msdeploy.axd" `
+                    /p:DeployIisAppPath="\$(\$profile.msdeploySite)" `
+                    /p:UserName="\$(\$profile.userName)" `
+                    /p:Password="\$(\$profile.userPWD)" `
+                    /p:AllowUntrustedCertificate=true `
+                    /p:VisualStudioVersion=17.0 `
+                    /p:VSToolsPath="${paths.vstools}" `
+                    /p:BuildProjectReferences=false `
+                    /p:SkipResolveProjectReferences=true `
+                    /p:TargetFrameworkVersion=v4.7.2 `
+                    /p:DeleteExistingFiles=True `
+                    /maxcpucount `
+                    /verbosity:detailed
+
+                if (\$LASTEXITCODE -ne 0) { 
+                    Write-Error "❌ Error en publicación"; 
+                    exit 1 
+                }
+
+                Write-Host "✅ Publicación completada exitosamente"
+
+                # Verificación adicional - listar archivos publicados
+                Write-Host "📁 Contenido del directorio de publicación:"
+                Get-ChildItem "obj\\Release\\Package\\PackageTmp" -Recurse | Select-Object Name, Length | Format-Table -AutoSize
+            """
         }
     }
+}
 }
