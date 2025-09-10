@@ -29,7 +29,7 @@ return [
                 Pre_Produccion: ""
             ],
             URL: [
-                Test: "http://crm-backend-pruebas.azurewebsites.net",
+                Test: "http://crm-backend-pruebas.azurewebsites.net/swagger/ui/index",
                 Pre_Produccion: ""
             ]
         ]
