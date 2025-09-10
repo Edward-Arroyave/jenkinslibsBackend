@@ -83,7 +83,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
-    stage("Deploy ${api}") {
+   stage("Deploy ${api}") {
     def apiConfig = [
         CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
     ]
@@ -107,12 +107,42 @@ def call(api, configCompleto, config, CONFIGURATION) {
                 Write-Host " - Sitio: \$(\$profile.msdeploySite)"
                 Write-Host " - Usuario: \$(\$profile.userName)"
 
-                # Ejecutar MSBuild con target Publish explícito
+                # Crear archivo .pubxml temporal
+                \$pubxmlContent = @'
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <WebPublishMethod>MSDeploy</WebPublishMethod>
+    <PublishProvider>AzureWebSite</PublishProvider>
+    <LastUsedBuildConfiguration>Release</LastUsedBuildConfiguration>
+    <LastUsedPlatform>Any CPU</LastUsedPlatform>
+    <SiteUrlToLaunchAfterPublish>https://\$(\$profile.msdeploySite)</SiteUrlToLaunchAfterPublish>
+    <LaunchSiteAfterPublish>True</LaunchSiteAfterPublish>
+    <ExcludeApp_Data>False</ExcludeApp_Data>
+    <MSDeployServiceURL>https://\$(\$profile.publishUrl)/msdeploy.axd</MSDeployServiceURL>
+    <DeployIisAppPath>\$(\$profile.msdeploySite)</DeployIisAppPath>
+    <RemoteSitePhysicalPath />
+    <SkipExtraFilesOnServer>True</SkipExtraFilesOnServer>
+    <MSDeployPublishMethod>WMSVC</MSDeployPublishMethod>
+    <EnableMSDeployBackup>True</EnableMSDeployBackup>
+    <UserName>\$(\$profile.userName)</UserName>
+    <Password>\$(\$profile.userPWD)</Password>
+    <AllowUntrustedCertificate>true</AllowUntrustedCertificate>
+  </PropertyGroup>
+</Project>
+'@
+
+                \$pubxmlPath = "\\tmp\\AzurePubXml.pubxml"
+                Set-Content -Path \$pubxmlPath -Value \$pubxmlContent
+
+                Write-Host "📄 Archivo .pubxml temporal creado en: \$pubxmlPath"
+
+                # Ejecutar MSBuild con el archivo .pubxml
                 & "${paths.msbuild}" "ApiCrmVitalea.csproj" `
                     /t:Build,Publish `
                     /p:Configuration=${CONFIGURATION} `
                     /p:DeployOnBuild=true `
-                    /p:PublishProfile="\$env:PUBLISH_SETTINGS" `
+                    /p:PublishProfile="\$pubxmlPath" `
                     /p:WebPublishMethod=MSDeploy `
                     /p:MsDeployServiceUrl="https://\$(\$profile.publishUrl)/msdeploy.axd" `
                     /p:DeployIisAppPath="\$(\$profile.msdeploySite)" `
@@ -126,7 +156,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     /p:TargetFrameworkVersion=v4.7.2 `
                     /p:DeleteExistingFiles=True `
                     /maxcpucount `
-                    /verbosity:diagnostic
+                    /verbosity:detailed
 
                 if (\$LASTEXITCODE -ne 0) { 
                     Write-Error "❌ Error en publicación"; 
@@ -134,10 +164,6 @@ def call(api, configCompleto, config, CONFIGURATION) {
                 }
 
                 Write-Host "✅ Publicación completada exitosamente"
-
-                # Verificación adicional
-                Write-Host "📁 Verificando archivos publicados..."
-                Get-ChildItem "obj\\Release\\Package\\PackageTmp" -Recurse | Select-Object Name, Length | Format-Table -AutoSize
             """
         }
     }
