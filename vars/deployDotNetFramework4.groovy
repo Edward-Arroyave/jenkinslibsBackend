@@ -162,7 +162,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     /p:TargetFrameworkVersion=v4.7.2 `
                     /p:DeleteExistingFiles=True `
                     /maxcpucount `
-                    /verbosity:detailed
+                    /verbosity:minimal
 
                 if (\$LASTEXITCODE -ne 0) { 
                     Write-Error "❌ Error en publicación"; 
