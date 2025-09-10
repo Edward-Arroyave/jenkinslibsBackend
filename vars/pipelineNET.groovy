@@ -16,7 +16,7 @@ def call(Map config) {
         agent { label 'Windows-node' }
         
         environment {
-            BUILD_FOLDER = "${env.WORKSPACE}/${env.BUILD_ID}"
+            BUILD_FOLDER = "${env.WORKSPACE}/${config.AMBIENTE}"
             REPO_PATH    = "${BUILD_FOLDER}/repo"
             REPO_URL     = "${config.REPO_URL}"
             CONFIGURATION = 'Release'
@@ -126,7 +126,7 @@ def call(Map config) {
                         ENVIRONMENT: config.AMBIENTE
                     ])
                 }
-                cleanWs()
+                
             }
             
             success { echo '🎉 DESPLIEGUE FINALIZADO CON ÉXITO' }
