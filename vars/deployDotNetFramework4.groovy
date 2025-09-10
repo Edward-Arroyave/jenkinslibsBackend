@@ -83,7 +83,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
         }
     }
 
-   stage("Deploy ${api}") {
+stage("Deploy ${api}") {
     def apiConfig = [
         CREDENTIALS_ID: configCompleto.APIS[api].CREDENCIALES[config.AMBIENTE]
     ]
@@ -107,7 +107,7 @@ def call(api, configCompleto, config, CONFIGURATION) {
                 Write-Host " - Sitio: \$(\$profile.msdeploySite)"
                 Write-Host " - Usuario: \$(\$profile.userName)"
 
-                # Crear archivo .pubxml temporal
+                # Crear archivo .pubxml temporal con formato correcto
                 \$pubxmlContent = @'
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -132,10 +132,11 @@ def call(api, configCompleto, config, CONFIGURATION) {
 </Project>
 '@
 
-                \$pubxmlPath = "\\tmp\\AzurePubXml.pubxml"
+                # Usar una ruta absoluta dentro del directorio actual
+                \$pubxmlPath = "AzurePubXml.pubxml"
                 Set-Content -Path \$pubxmlPath -Value \$pubxmlContent
 
-                Write-Host "📄 Archivo .pubxml temporal creado en: \$pubxmlPath"
+                Write-Host "📄 Archivo .pubxml temporal creado en: \$((Get-Item \$pubxmlPath).FullName)"
 
                 # Ejecutar MSBuild con el archivo .pubxml
                 & "${paths.msbuild}" "ApiCrmVitalea.csproj" `
@@ -143,12 +144,6 @@ def call(api, configCompleto, config, CONFIGURATION) {
                     /p:Configuration=${CONFIGURATION} `
                     /p:DeployOnBuild=true `
                     /p:PublishProfile="\$pubxmlPath" `
-                    /p:WebPublishMethod=MSDeploy `
-                    /p:MsDeployServiceUrl="https://\$(\$profile.publishUrl)/msdeploy.axd" `
-                    /p:DeployIisAppPath="\$(\$profile.msdeploySite)" `
-                    /p:UserName="\$(\$profile.userName)" `
-                    /p:Password="\$(\$profile.userPWD)" `
-                    /p:AllowUntrustedCertificate=true `
                     /p:VisualStudioVersion=17.0 `
                     /p:VSToolsPath="${paths.vstools}" `
                     /p:BuildProjectReferences=false `
@@ -164,6 +159,9 @@ def call(api, configCompleto, config, CONFIGURATION) {
                 }
 
                 Write-Host "✅ Publicación completada exitosamente"
+
+                # Limpiar archivo temporal
+                Remove-Item \$pubxmlPath -Force
             """
         }
     }
