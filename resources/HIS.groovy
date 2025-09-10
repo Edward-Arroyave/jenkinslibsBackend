@@ -1,7 +1,7 @@
 return [
     AMBIENTES: [
         demo: [ BRANCH: "demo" ],
-        test: [ BRANCH: "oficina.virtual" ]
+        test: [ BRANCH: "malla.dev" ]
     ],
 
     APIS: [
