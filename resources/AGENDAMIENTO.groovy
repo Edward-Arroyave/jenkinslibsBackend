@@ -16,7 +16,7 @@ return [
                 test: "https://agendamiento-backend-co-pruebas-f9eqcgdtgkeug3cn.eastus2-01.azurewebsites.net"
             ],
             WebHook[
-                value: "https://hooks.slack.com/services/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", 
+                value: "WEBHOOK_HEALTHBOOK", 
                 chanel: "#desarrollos-backend"
             ]
         ],
