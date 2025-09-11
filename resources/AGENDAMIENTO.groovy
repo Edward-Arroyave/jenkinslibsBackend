@@ -14,6 +14,10 @@ return [
             URL: [
                 demo: "https://agendamiento-backend-co-demo-gba4fhbqexf2dzcc.eastus2-01.azurewebsites.net",
                 test: "https://agendamiento-backend-co-pruebas-f9eqcgdtgkeug3cn.eastus2-01.azurewebsites.net"
+            ],
+            WebHook[
+                value: "https://hooks.slack.com/services/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", 
+                chanel: "#desarrollos-backend"
             ]
         ],
         Api_ProcesosAuto: [
