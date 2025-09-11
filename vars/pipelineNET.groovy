@@ -123,7 +123,8 @@ def call(Map config) {
                     sendNotificationTeamsNET([
                         APIS_SUCCESSFUL:  apisExitosas.join(', '),
                         APIS_FAILURE: apisFallidas.join(', '),
-                        ENVIRONMENT: config.AMBIENTE
+                        ENVIRONMENT: config.AMBIENTE,
+                        PRODUCT: config.PRODUCT
                     ])
                 }
                 
