@@ -33,7 +33,7 @@ def call(Map config) {
         }
     }
 
-    try {
+        try {
         def sendNotification = { webhookUrl = "" ->
             withBuildUser {
                 office365ConnectorSend(
@@ -63,12 +63,18 @@ def call(Map config) {
             }
         }
 
+        // 🔹 Siempre enviar al global (sin parámetros usa el default configurado en Jenkins)
+        sendNotification()
+
+        // 🔹 Validar si existe webhook adicional
         if (config.PRODUCT == "AGENDAMIENTO") {
             withCredentials([string(credentialsId: 'WEBHOOK_HEALTHBOOK', variable: 'WEBHOOK_URL')]) {
-                sendNotification(WEBHOOK_URL)
+                if (WEBHOOK_URL?.trim()) {   // se valida que no sea null o vacío
+                    sendNotification(WEBHOOK_URL)
+                } else {
+                    echo "⚠️ Webhook adicional vacío, se omitió el envío extra."
+                }
             }
-        } else {
-            sendNotification() // sin webhook, se usa el default si existe
         }
 
         echo "📢 Notificación enviada a Microsoft Teams de manera exitosa."
@@ -76,6 +82,7 @@ def call(Map config) {
         echo "⚠️ No fue posible enviar la notificación a Teams: ${e.message}"
         echo "📋 La información fue presentada en consola."
     }
+
 
     echo "${logEmoji} Estado Final: ${statusText} | Duración: ${durationText}"
 }
