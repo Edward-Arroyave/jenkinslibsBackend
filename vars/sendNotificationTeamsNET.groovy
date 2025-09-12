@@ -61,7 +61,7 @@ def call(Map config) {
             )
         }
 
-        if (PRODUCT == "AGENDAMIENTO") {
+        if (config.PRODUCT == "AGENDAMIENTO") {
             withCredentials([string(credentialsId: 'WEBHOOK_HEALTHBOOK', variable: 'WEBHOOK_URL')]) {
                 sendNotification(WEBHOOK_URL)
             }
