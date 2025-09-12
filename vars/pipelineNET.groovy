@@ -44,6 +44,8 @@ def call(Map config) {
                             cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
                             
                             env.CONFIG_COMPLETO = groovy.json.JsonOutput.toJson(configCompleto)
+                            env.CONFIG_COMPLETO = new groovy.json.JsonSlurperClassic().parseText(env.CONFIG_COMPLETO)
+                        
                             
                         } catch (Exception e) {
                             echo "❌ ERROR: No se pudo cargar la configuración"
@@ -57,7 +59,7 @@ def call(Map config) {
             stage('Deploy APIs') {
                 steps {
                     script {
-                        def configCompleto = new groovy.json.JsonSlurperClassic().parseText(env.CONFIG_COMPLETO)
+                        def env.CONFIG_COMPLETO 
                         
                         echo "🎯 Iniciando despliegue de ${apis.size()} APIs en paralelo"
                         
@@ -66,18 +68,18 @@ def call(Map config) {
                         apis.each { api ->
                           parallelStages["Deploy-${api}"] = {
                             try {
-                                dir("${configCompleto.APIS[api].REPO_PATH}") {
+                                dir("${env.CONFIG_COMPLETO.APIS[api].REPO_PATH}") {
                                     def csproj = readFile(file: "${api}.csproj")
 
                                     if (csproj.contains("<TargetFrameworkVersion>v4")) {
                                         echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
-                                        deployDotNetFramework4(api, configCompleto, config, CONFIGURATION)
+                                        deployDotNetFramework4(api, env.CONFIG_COMPLETO, config, CONFIGURATION)
                                     } else {
                                         echo "⚙️ Proyecto ${api} detectado como .NET Core / .NET 5+"
-                                        deployDotNet(api, configCompleto, config, CONFIGURATION)
+                                        deployDotNet(api, env.CONFIG_COMPLETO, config, CONFIGURATION)
                                     }
                                 }
-                                def url = configCompleto.APIS[api].URL[config.AMBIENTE]
+                                def url = env.CONFIG_COMPLETO.APIS[api].URL[config.AMBIENTE]
                                 validateApi(url, api)
                                 apisExitosas << api
                                 echo "🎉 DESPLIEGUE EXITOSO: ${api}"
@@ -124,7 +126,8 @@ def call(Map config) {
                         APIS_SUCCESSFUL:  apisExitosas.join(', '),
                         APIS_FAILURE: apisFallidas.join(', '),
                         ENVIRONMENT: config.AMBIENTE,
-                        PRODUCT: config.PRODUCT
+                        PRODUCT: config.PRODUCT,
+                        WEBHOOK_URL: env.CONFIG_COMPLETO.WEBHOOK_URL
                     ])
                 }
                 
