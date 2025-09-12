@@ -21,6 +21,7 @@ return [
     AMBIENTES: [
         Test: [ BRANCH: "test" ]
     ],
+    WEBHOOK_URL: '',
     APIS: [
         ApiCrmVitalea: [
             REPO_PATH: "${env.REPO_PATH}/ApiCrmVitalea",

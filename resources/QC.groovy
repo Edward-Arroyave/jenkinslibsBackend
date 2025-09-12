@@ -3,7 +3,7 @@ return [
         demo: [ BRANCH: "Demo" ],
         test: [ BRANCH: "Test" ]
     ],
-
+    WEBHOOK_URL: '',
     APIS: [
         backendQC: [
             REPO_PATH: "${env.REPO_PATH}/qc_backend_web",

@@ -3,7 +3,7 @@ return [
         Test: [ BRANCH: "Test" ],
         Pre_Produccion: [ BRANCH: "main" ]
     ],
-
+    WEBHOOK_URL: '',
     APIS: [
         ApiSoyVioleta: [
             REPO_PATH: "${env.REPO_PATH}/ApiCrmVitalea",

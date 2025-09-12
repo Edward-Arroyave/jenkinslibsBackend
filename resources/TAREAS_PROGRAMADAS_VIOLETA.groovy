@@ -3,7 +3,7 @@ return [
         Test: [ BRANCH: "test" ],
         Pre_Produccion: [ BRANCH: "main" ]
     ],
-
+    WEBHOOK_URL: '',
     APIS: [
         ScheduledTasksVioleta: [
             REPO_PATH: "${env.REPO_PATH}/ScheduledTasks",

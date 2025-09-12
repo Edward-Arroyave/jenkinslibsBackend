@@ -9,7 +9,7 @@ return [
         Aimsa_Demo_RamaDemoLatam: [ BRANCH: "demo.LATAM" ],
         MX_Test: [ BRANCH: "colcan-mx.demo" ]
     ],
-
+    WEBHOOK_URL: '',
     APIS: [
         ApiANALYTICS: [
             REPO_PATH: "${env.REPO_PATH}/ApiANALYTICS",

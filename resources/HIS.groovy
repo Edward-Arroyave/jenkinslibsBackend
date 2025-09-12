@@ -3,7 +3,7 @@ return [
         demo: [ BRANCH: "demo" ],
         test: [ BRANCH: "malla.dev" ]
     ],
-
+    WEBHOOK_URL: '',
     APIS: [
         API_CRTZ_WEB: [
             REPO_PATH: "${env.REPO_PATH}/API_HIS/API_CRTZ_WEB",

@@ -3,7 +3,7 @@ return [
         Test: [ BRANCH: "test" ],
         Pre_Produccion: [ BRANCH: "main" ]
     ],
-
+    WEBHOOK_URL: '',
     APIS: [
         Pasarela_Pagos: [
             REPO_PATH: "${env.REPO_PATH}/Pasarela_Pagos",

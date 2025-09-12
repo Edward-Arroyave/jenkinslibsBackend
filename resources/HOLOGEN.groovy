@@ -3,7 +3,7 @@ return [
         demo: [ BRANCH: "demo" ],
         test: [ BRANCH: "test" ]
     ],
-
+    WEBHOOK_URL: '',
     APIS: [
         Api_BioInformatica: [
             REPO_PATH: "${env.REPO_PATH}/API_Hologen/Api_BioInformatica",

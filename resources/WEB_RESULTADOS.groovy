@@ -5,7 +5,7 @@ return [
         Aimsa_Demo: [ BRANCH: "aimsa.demo" ],
         Aimsa_Demo_RamaDemoLatam: [ BRANCH: "demo.LATAM" ]
     ],
-
+    WEBHOOK_URL: '',
     APIS: [
         Api_Web_Resultados: [
             REPO_PATH: "${env.REPO_PATH}/Api_Web_Resultados",
