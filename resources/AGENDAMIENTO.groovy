@@ -3,7 +3,7 @@ return [
         demo: [ BRANCH: "Demo" ],
         test: [ BRANCH: "Test" ]
     ],
-
+    WebHook: 'WEBHOOK_HEALTHBOOK',
     APIS: [
         Api_Agendamiento: [
             REPO_PATH: "${env.REPO_PATH}/Agendamiento/Api_Agendamiento",
