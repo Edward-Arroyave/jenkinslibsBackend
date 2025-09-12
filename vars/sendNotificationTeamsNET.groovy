@@ -34,7 +34,7 @@ def call(Map config) {
     }
 
     try {
-        def sendNotification = { webhookUrl = null ->
+        def sendNotification = { webhookUrl = "" ->
             office365ConnectorSend(
                 status: status,
                 webhookUrl: webhookUrl,
