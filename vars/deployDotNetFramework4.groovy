@@ -109,28 +109,28 @@ def call(api, configCompleto, config, CONFIGURATION) {
 
                 # Crear archivo .pubxml temporal con formato correcto
                 \$pubxmlContent = @"
-                <?xml version="1.0" encoding="utf-8"?>
-                <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-                <PropertyGroup>
-                    <WebPublishMethod>MSDeploy</WebPublishMethod>
-                    <PublishProvider>AzureWebSite</PublishProvider>
-                    <LastUsedBuildConfiguration>Release</LastUsedBuildConfiguration>
-                    <LastUsedPlatform>Any CPU</LastUsedPlatform>
-                    <SiteUrlToLaunchAfterPublish>https://\$(\$profile.msdeploySite)</SiteUrlToLaunchAfterPublish>
-                    <LaunchSiteAfterPublish>True</LaunchSiteAfterPublish>
-                    <ExcludeApp_Data>False</ExcludeApp_Data>
-                    <MSDeployServiceURL>https://\$(\$profile.publishUrl)/msdeploy.axd</MSDeployServiceURL>
-                    <DeployIisAppPath>\$(\$profile.msdeploySite)</DeployIisAppPath>
-                    <RemoteSitePhysicalPath />
-                    <SkipExtraFilesOnServer>True</SkipExtraFilesOnServer>
-                    <MSDeployPublishMethod>WMSVC</MSDeployPublishMethod>
-                    <EnableMSDeployBackup>True</EnableMSDeployBackup>
-                    <UserName>\$(\$profile.userName)</UserName>
-                    <Password>\$(\$profile.userPWD)</Password>
-                    <AllowUntrustedCertificate>true</AllowUntrustedCertificate>
-                </PropertyGroup>
-                </Project>
-                "@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <WebPublishMethod>MSDeploy</WebPublishMethod>
+    <PublishProvider>AzureWebSite</PublishProvider>
+    <LastUsedBuildConfiguration>Release</LastUsedBuildConfiguration>
+    <LastUsedPlatform>Any CPU</LastUsedPlatform>
+    <SiteUrlToLaunchAfterPublish>https://\$(\$profile.msdeploySite)</SiteUrlToLaunchAfterPublish>
+    <LaunchSiteAfterPublish>True</LaunchSiteAfterPublish>
+    <ExcludeApp_Data>False</ExcludeApp_Data>
+    <MSDeployServiceURL>https://\$(\$profile.publishUrl)/msdeploy.axd</MSDeployServiceURL>
+    <DeployIisAppPath>\$(\$profile.msdeploySite)</DeployIisAppPath>
+    <RemoteSitePhysicalPath />
+    <SkipExtraFilesOnServer>True</SkipExtraFilesOnServer>
+    <MSDeployPublishMethod>WMSVC</MSDeployPublishMethod>
+    <EnableMSDeployBackup>True</EnableMSDeployBackup>
+    <UserName>\$(\$profile.userName)</UserName>
+    <Password>\$(\$profile.userPWD)</Password>
+    <AllowUntrustedCertificate>true</AllowUntrustedCertificate>
+  </PropertyGroup>
+</Project>
+"@
 
                 # Usar una ruta absoluta válida en Windows
                 \$pubxmlPath = "\$pwd\\AzurePubXml.pubxml"
