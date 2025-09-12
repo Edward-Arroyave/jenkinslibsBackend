@@ -11,6 +11,7 @@ def call(Map config) {
     
     def apisExitosas = []
     def apisFallidas = []
+    def configCompleto // aquí se guarda el mapa de configuración
 
     pipeline {
         agent { label 'Windows-node' }
@@ -23,10 +24,7 @@ def call(Map config) {
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "true"
         }
 
-        
         stages {
-
-           
             stage('Load Config & Clone Repo') {
                 steps {
                     script {
@@ -34,7 +32,7 @@ def call(Map config) {
                         
                         try {
                             def contenido = libraryResource "${config.PRODUCT}.groovy"
-                            def configCompleto = evaluate(contenido)
+                            configCompleto = evaluate(contenido)   // guardamos el Map en variable global
                             def branch = configCompleto.AMBIENTES[config.AMBIENTE].BRANCH
                             
                             echo "✅ Configuración cargada exitosamente"
@@ -42,11 +40,6 @@ def call(Map config) {
                             echo "📁 Ruta del repositorio: ${env.REPO_PATH}"
                             
                             cloneRepoNET(branch: branch, repoPath: env.REPO_PATH, repoUrl: env.REPO_URL)
-                            
-                            env.CONFIG_COMPLETO = groovy.json.JsonOutput.toJson(configCompleto)
-                            env.CONFIG_COMPLETO = new groovy.json.JsonSlurperClassic().parseText(env.CONFIG_COMPLETO)
-                        
-                            
                         } catch (Exception e) {
                             echo "❌ ERROR: No se pudo cargar la configuración"
                             echo "📝 Detalles: ${e.message}"
@@ -59,7 +52,6 @@ def call(Map config) {
             stage('Deploy APIs') {
                 steps {
                     script {
-                        
                         echo "🎯 Iniciando despliegue de ${apis.size()} APIs en paralelo"
                         
                         def parallelStages = [:]
@@ -67,18 +59,18 @@ def call(Map config) {
                         apis.each { api ->
                           parallelStages["Deploy-${api}"] = {
                             try {
-                                dir("${env.CONFIG_COMPLETO.APIS[api].REPO_PATH}") {
+                                dir("${configCompleto.APIS[api].REPO_PATH}") {
                                     def csproj = readFile(file: "${api}.csproj")
 
                                     if (csproj.contains("<TargetFrameworkVersion>v4")) {
                                         echo "⚙️ Proyecto ${api} detectado como .NET Framework 4.x"
-                                        deployDotNetFramework4(api, env.CONFIG_COMPLETO, config, CONFIGURATION)
+                                        deployDotNetFramework4(api, configCompleto, config, CONFIGURATION)
                                     } else {
                                         echo "⚙️ Proyecto ${api} detectado como .NET Core / .NET 5+"
-                                        deployDotNet(api, env.CONFIG_COMPLETO, config, CONFIGURATION)
+                                        deployDotNet(api, configCompleto, config, CONFIGURATION)
                                     }
                                 }
-                                def url = env.CONFIG_COMPLETO.APIS[api].URL[config.AMBIENTE]
+                                def url = configCompleto.APIS[api].URL[config.AMBIENTE]
                                 validateApi(url, api)
                                 apisExitosas << api
                                 echo "🎉 DESPLIEGUE EXITOSO: ${api}"
@@ -91,7 +83,6 @@ def call(Map config) {
                           }
                         }
 
-
                         echo "⏰ Ejecutando despliegues en paralelo..."
                         parallel parallelStages
                     }
@@ -101,7 +92,6 @@ def call(Map config) {
         
         post {
             always {
-
                 script {
                     echo "📊 =============================== RESUMEN DESPLIEGUE ==============================="
                     echo "✅ APIs exitosas: ${apisExitosas.size()}/${apis.size()}"
@@ -126,10 +116,9 @@ def call(Map config) {
                         APIS_FAILURE: apisFallidas.join(', '),
                         ENVIRONMENT: config.AMBIENTE,
                         PRODUCT: config.PRODUCT,
-                        WEBHOOK_URL: env.CONFIG_COMPLETO.WEBHOOK_URL
+                        WEBHOOK_URL: configCompleto.WEBHOOK_URL   // usamos el Map directo
                     ])
                 }
-                
             }
             
             success { echo '🎉 DESPLIEGUE FINALIZADO CON ÉXITO' }
