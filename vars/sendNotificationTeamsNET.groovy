@@ -35,30 +35,32 @@ def call(Map config) {
 
     try {
         def sendNotification = { webhookUrl = "" ->
-            office365ConnectorSend(
-                status: status,
-                webhookUrl: webhookUrl,
-                message: """
-                Buen día ingenieros.  
-                Les informamos el estado del proceso de despliegue ejecutado:  
-                Proceso: **${env.JOB_NAME} #${env.BUILD_NUMBER}**  
-                Agradecemos su atención y quedamos atentos a observaciones o comentarios adicionales. 
-                """,
-                adaptiveCards: true,
-                color: color,
-                factDefinitions: [
-                    [name: "📌 Estado Final", template: "**${statusText} ${emoji}**"],
-                    [name: "👤 Usuario ejecutor", template: "_${env.BUILD_USER}_"],
-                    [name: "📧 Usuario correo", template: "_${env.BUILD_USER_EMAIL}_"],
-                    [name: "🌍 Entorno", template: "**${config.ENVIRONMENT}**"],
-                    [name: "👨‍💻 Autor del Commit", template: "${env.COMMIT_AUTHOR}"],
-                    [name: "📝 Commit", template: "${env.COMMIT_MESSAGE}"],
-                    [name: "🔗 Hash del Commit", template: "`${env.COMMIT_HASH} `"],
-                    [name: "⏱️ Duración", template: "` ${durationText} `"],
-                    [name: "✅ APIs Exitosas", template: "**${config.APIS_SUCCESSFUL ?: 'Ninguna'}**"],
-                    [name: "❌ APIs con Errores", template: "**${config.APIS_FAILURE ?: 'Ninguna'}**"],
-                ]
-            )
+            withBuildUser {
+                office365ConnectorSend(
+                    status: status,
+                    webhookUrl: webhookUrl,
+                    message: """
+                    Buen día ingenieros.  
+                    Les informamos el estado del proceso de despliegue ejecutado:  
+                    Proceso: **${env.JOB_NAME} #${env.BUILD_NUMBER}**  
+                    Agradecemos su atención y quedamos atentos a observaciones o comentarios adicionales. 
+                    """,
+                    adaptiveCards: true,
+                    color: color,
+                    factDefinitions: [
+                        [name: "📌 Estado Final", template: "**${statusText} ${emoji}**"],
+                        [name: "👤 Usuario ejecutor", template: "_${env.BUILD_USER}_"],
+                        [name: "📧 Usuario correo", template: "_${env.BUILD_USER_EMAIL}_"],
+                        [name: "🌍 Entorno", template: "**${config.ENVIRONMENT}**"],
+                        [name: "👨‍💻 Autor del Commit", template: "${env.COMMIT_AUTHOR}"],
+                        [name: "📝 Commit", template: "${env.COMMIT_MESSAGE}"],
+                        [name: "🔗 Hash del Commit", template: "`${env.COMMIT_HASH} `"],
+                        [name: "⏱️ Duración", template: "` ${durationText} `"],
+                        [name: "✅ APIs Exitosas", template: "**${config.APIS_SUCCESSFUL ?: 'Ninguna'}**"],
+                        [name: "❌ APIs con Errores", template: "**${config.APIS_FAILURE ?: 'Ninguna'}**"],
+                    ]
+                )
+            }
         }
 
         if (config.PRODUCT == "AGENDAMIENTO") {
