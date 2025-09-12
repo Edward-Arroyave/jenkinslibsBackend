@@ -67,7 +67,7 @@ def call(Map config) {
         sendNotification()
 
         // 🔹 Validar si existe webhook adicional
-        if (config.PRODUCT == "AGENDAMIENTO") {
+        if (WEBHOOK_URL?.trim()) {   // se valida que no sea null o vacío
             withCredentials([string(credentialsId: 'WEBHOOK_HEALTHBOOK', variable: 'WEBHOOK_URL')]) {
                 if (WEBHOOK_URL?.trim()) {   // se valida que no sea null o vacío
                     sendNotification(WEBHOOK_URL)
