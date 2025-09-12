@@ -18,7 +18,7 @@ return [
                 Colombia_Demo: "PROFILE_LIS_ApiANALYTICS_COLOMBIA_DEMO",
                 Colombia_PRE_PRODUCCION: "",
                 Latam_Demo: "PROFILE_LIS_ApiANALYTICS_LATAM_DEMO",
-                Latam_Test: "PROFILE_LIS_ApiANALYTICS_LATAM_TEST"
+                Latam_Test: "PROFILE_LIS_ApiANALYTICS_LATAM_TEST",
                 Aimsa_Demo: "PROFILE_LIS_ApiANALYTICS_AIMSA_DEMO",
                 Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_ApiANALYTICS_AIMSA_DEMO",
                 MX_Test: ""
