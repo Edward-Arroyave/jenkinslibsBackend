@@ -4,6 +4,7 @@ return [
         Colombia_Demo: [ BRANCH: "demo.lis" ],
         Colombia_PRE_PRODUCCION: [ BRANCH: "" ],
         Latam_Demo: [ BRANCH: "demo.LATAM" ],
+        Latam_Test: [ BRANCH: "" ],
         Aimsa_Demo: [ BRANCH: "aimsa.demo" ],
         Aimsa_Demo_RamaDemoLatam: [ BRANCH: "demo.LATAM" ],
         MX_Test: [ BRANCH: "colcan-mx.demo" ]
@@ -17,6 +18,7 @@ return [
                 Colombia_Demo: "PROFILE_LIS_ApiANALYTICS_COLOMBIA_DEMO",
                 Colombia_PRE_PRODUCCION: "",
                 Latam_Demo: "PROFILE_LIS_ApiANALYTICS_LATAM_DEMO",
+                Latam_Test: "PROFILE_LIS_ApiANALYTICS_LATAM_TEST"
                 Aimsa_Demo: "PROFILE_LIS_ApiANALYTICS_AIMSA_DEMO",
                 Aimsa_Demo_RamaDemoLatam: "PROFILE_LIS_ApiANALYTICS_AIMSA_DEMO",
                 MX_Test: ""
@@ -26,6 +28,7 @@ return [
                 Colombia_Demo: "https://livelis-backend-analitico-annar-demo.azurewebsites.net",
                 Colombia_PRE_PRODUCCION: "",
                 Latam_Demo: "https://livelis-analitico-latam-demo-e2aaafadd9byfbcy.eastus2-01.azurewebsites.net",
+                Latam_Test: "https://livelis-analitico-latam-test-c4cucncmddf6d8c9.eastus2-01.azurewebsites.net/",
                 Aimsa_Demo: "https://livelis-analitico-aimsa-demo-cjgmbtcmaghnhkf6.eastus2-01.azurewebsites.net",
                 Aimsa_Demo_RamaDemoLatam: "https://livelis-analitico-aimsa-demo-cjgmbtcmaghnhkf6.eastus2-01.azurewebsites.net",
                 MX_Test: ""
