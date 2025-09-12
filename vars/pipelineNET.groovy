@@ -59,7 +59,6 @@ def call(Map config) {
             stage('Deploy APIs') {
                 steps {
                     script {
-                        def env.CONFIG_COMPLETO 
                         
                         echo "🎯 Iniciando despliegue de ${apis.size()} APIs en paralelo"
                         
